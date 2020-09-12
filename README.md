@@ -5,6 +5,7 @@
 >
 > See also from the updates channel: <https://t.me/skyleebot/61>
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/ee3cbfc0181b43b79d38f0e856718d13)](https://app.codacy.com/manual/marchingon12/skyleebot?utm_source=github.com&utm_medium=referral&utm_content=marchingon12/skyleebot&utm_campaign=Badge_Grade_Dashboard)
 [![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
 [![ForTheBadge built-with-love](http://ForTheBadge.com/images/badges/built-with-love.svg)](https://GitHub.com/Naereen/)
 

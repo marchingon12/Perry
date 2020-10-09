@@ -171,7 +171,7 @@ def get(bot, update, notename, show_none=True, no_format=False):
                         text,
                         reply_to_message_id=reply_id,
                         parse_mode=parseMode,
-                        disable_web_page_preview=True,
+                        disable_web_page_preview=False,
                         reply_markup=keyboard,
                     )
                 else:
@@ -181,7 +181,7 @@ def get(bot, update, notename, show_none=True, no_format=False):
                         caption=text,
                         reply_to_message_id=reply_id,
                         parse_mode=parseMode,
-                        disable_web_page_preview=True,
+                        disable_web_page_preview=False,
                         reply_markup=keyboard,
                     )
 

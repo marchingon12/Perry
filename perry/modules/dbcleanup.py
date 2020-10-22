@@ -2,7 +2,7 @@ from time import sleep
 
 from telegram import Bot, Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.error import BadRequest, Unauthorized
-from telegram.ext import CommandHandler, CallbackQueryHandler, Filters
+from telegram.ext import CommandHandler, CallbackQueryHandler, run_async, Filters
 
 import perry.modules.sql.global_bans_sql as gban_sql
 import perry.modules.sql.users_sql as user_sql
@@ -80,6 +80,7 @@ def get_invalid_gban(bot: Bot, update: Update, remove: bool = False):
         return ungbanned_users
 
 
+@run_async
 def dbcleanup(update, context):
     msg = update.effective_message
 
@@ -92,9 +93,7 @@ def dbcleanup(update, context):
     reply = f"Total invalid chats - {invalid_chat_count}\n"
     reply += f"Total invalid gbanned users - {invalid_gban_count}"
 
-    buttons = [
-        [InlineKeyboardButton("Cleanup DB", callback_data="db_cleanup")]
-    ]
+    buttons = [[InlineKeyboardButton("Cleanup DB", callback_data="db_cleanup")]]
 
     update.effective_message.reply_text(
         reply, reply_markup=InlineKeyboardMarkup(buttons)
@@ -152,14 +151,13 @@ def get_muted_chats(bot: Bot, update: Update, leave: bool = False):
         return muted_chats
 
 
+@run_async
 def leave_muted_chats(update, context):
     message = update.effective_message
     progress_message = message.reply_text("Getting chat count ...")
     muted_chats = get_muted_chats(context.bot, update)
 
-    buttons = [
-        [InlineKeyboardButton("Leave chats", callback_data="db_leave_chat")]
-    ]
+    buttons = [[InlineKeyboardButton("Leave chats", callback_data="db_leave_chat")]]
 
     update.effective_message.reply_text(
         f"I am muted in {muted_chats} chats.",
@@ -168,6 +166,7 @@ def leave_muted_chats(update, context):
     progress_message.delete()
 
 
+@run_async
 def callback_button(update, context):
     bot = context.bot
     query = update.callback_query
@@ -181,18 +180,14 @@ def callback_button(update, context):
 
     if query_type == "db_leave_chat":
         if query.from_user.id in admin_list:
-            bot.editMessageText(
-                "Leaving chats ...", chat_id, message.message_id
-            )
+            bot.editMessageText("Leaving chats ...", chat_id, message.message_id)
             chat_count = get_muted_chats(bot, update, True)
             bot.sendMessage(chat_id, f"Left {chat_count} chats.")
         else:
             query.answer("You are not allowed to use this.")
     elif query_type == "db_cleanup":
         if query.from_user.id in admin_list:
-            bot.editMessageText(
-                "Cleaning up DB ...", chat_id, message.message_id
-            )
+            bot.editMessageText("Cleaning up DB ...", chat_id, message.message_id)
             invalid_chat_count = get_invalid_chats(bot, update, True)
             invalid_gban_count = get_invalid_gban(bot, update, True)
             reply = "Cleaned up {} chats and {} gbanned users from db.".format(

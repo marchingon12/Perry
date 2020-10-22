@@ -3,6 +3,7 @@ from typing import Optional, List
 
 from telegram import Message, User
 from telegram import ParseMode, MAX_MESSAGE_LENGTH
+from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import escape_markdown
 
 import perry.modules.sql.userinfo_sql as sql
@@ -12,6 +13,7 @@ from perry.modules.helper_funcs.extraction import extract_user
 from perry.modules.helper_funcs.alternate import typing_action
 
 
+@run_async
 @typing_action
 def about_me(update, context):
     message = update.effective_message  # type: Optional[Message]
@@ -41,6 +43,7 @@ def about_me(update, context):
         )
 
 
+@run_async
 @typing_action
 def set_about_me(update, context):
     message = update.effective_message  # type: Optional[Message]
@@ -61,6 +64,7 @@ def set_about_me(update, context):
             )
 
 
+@run_async
 @typing_action
 def about_bio(update, context):
     message = update.effective_message  # type: Optional[Message]
@@ -85,11 +89,10 @@ def about_bio(update, context):
             "{} No details about him have been saved yet !".format(username)
         )
     else:
-        update.effective_message.reply_text(
-            " Your bio  about you has been saved !"
-        )
+        update.effective_message.reply_text(" Your bio  about you has been saved !")
 
 
+@run_async
 @typing_action
 def set_about_bio(update, context):
     message = update.effective_message  # type: Optional[Message]
@@ -98,9 +101,7 @@ def set_about_bio(update, context):
         repl_message = message.reply_to_message
         user_id = repl_message.from_user.id
         if user_id == message.from_user.id:
-            message.reply_text(
-                "Are you looking to change your own ... ?? That 's it."
-            )
+            message.reply_text("Are you looking to change your own ... ?? That 's it.")
             return
         elif user_id == context.bot.id and sender.id not in SUDO_USERS:
             message.reply_text(" Only SUDO USERS can change my information.")
@@ -125,9 +126,7 @@ def set_about_bio(update, context):
                     )
                 )
     else:
-        message.reply_text(
-            " His bio can only be saved if someone MESSAGE as a REPLY"
-        )
+        message.reply_text(" His bio can only be saved if someone MESSAGE as a REPLY")
 
 
 def __user_info__(user_id):

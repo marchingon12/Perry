@@ -1,13 +1,6 @@
 import threading
 from typing import Union
-from sqlalchemy import (
-    Column,
-    String,
-    Boolean,
-    UnicodeText,
-    Integer,
-    BigInteger,
-)
+from sqlalchemy import Column, String, Boolean, UnicodeText, Integer, BigInteger
 
 from perry.modules.helper_funcs.msg_types import Types
 from perry.modules.sql import SESSION, BASE
@@ -141,9 +134,7 @@ def set_welcome_mutes(chat_id, welcomemutes):
 
 def set_human_checks(user_id, chat_id):
     with INSERTION_LOCK:
-        human_check = SESSION.query(WelcomeMuteUsers).get(
-            (user_id, str(chat_id))
-        )
+        human_check = SESSION.query(WelcomeMuteUsers).get((user_id, str(chat_id)))
         if not human_check:
             human_check = WelcomeMuteUsers(user_id, str(chat_id), True)
 
@@ -158,9 +149,7 @@ def set_human_checks(user_id, chat_id):
 
 def get_human_checks(user_id, chat_id):
     try:
-        human_check = SESSION.query(WelcomeMuteUsers).get(
-            (user_id, str(chat_id))
-        )
+        human_check = SESSION.query(WelcomeMuteUsers).get((user_id, str(chat_id)))
         if not human_check:
             return None
         human_check = human_check.human_check

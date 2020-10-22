@@ -24,9 +24,7 @@ MATCH_MD = re.compile(
 
 # regex to find []() links -> hyperlinks/buttons
 LINK_REGEX = re.compile(r"(?<!\\)\[.+?\]\((.*?)\)")
-BTN_URL_REGEX = re.compile(
-    r"(\[([^\[]+?)\]\(buttonurl:(?:/{0,2})(.+?)(:same)?\))"
-)
+BTN_URL_REGEX = re.compile(r"(\[([^\[]+?)\]\(buttonurl:(?:/{0,2})(.+?)(:same)?\))")
 
 
 def _selective_escape(to_parse: str) -> str:
@@ -41,9 +39,7 @@ def _selective_escape(to_parse: str) -> str:
         if match.group("esc"):
             ent_start = match.start()
             to_parse = (
-                to_parse[: ent_start + offset]
-                + "\\"
-                + to_parse[ent_start + offset :]
+                to_parse[: ent_start + offset] + "\\" + to_parse[ent_start + offset :]
             )
             offset += 1
     return to_parse
@@ -108,15 +104,13 @@ def markdown_parser(
                 # else, check the escapes between the prev and last and forcefully escape the url to avoid mangling
                 else:
                     # TODO: investigate possible offset bug when lots of emoji are present
-                    res += _selective_escape(
-                        txt[prev:start] or ""
-                    ) + escape_markdown(ent_text)
+                    res += _selective_escape(txt[prev:start] or "") + escape_markdown(
+                        ent_text
+                    )
 
             # code handling
             elif ent.type == "code":
-                res += (
-                    _selective_escape(txt[prev:start]) + "`" + ent_text + "`"
-                )
+                res += _selective_escape(txt[prev:start]) + "`" + ent_text + "`"
 
             # handle markdown/html links
             elif ent.type == "text_link":
@@ -154,9 +148,7 @@ def button_markdown_parser(
         # if even, not escaped -> create button
         if n_escapes % 2 == 0:
             # create a thruple with button label, url, and newline status
-            buttons.append(
-                (match.group(2), match.group(3), bool(match.group(4)))
-            )
+            buttons.append((match.group(2), match.group(3), bool(match.group(4))))
             note_data += markdown_note[prev : match.start(1)]
             prev = match.end(1)
         # if odd, escaped -> move along
@@ -295,7 +287,5 @@ def markdown_to_html(text):
     text = text.replace("~", "~~")
     _html = markdown2.markdown(text, extras=["strike", "underline"])
     return bleach.clean(
-        _html,
-        tags=["strong", "em", "a", "code", "pre", "strike", "u"],
-        strip=True,
+        _html, tags=["strong", "em", "a", "code", "pre", "strike", "u"], strip=True
     )[:-1]

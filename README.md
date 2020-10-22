@@ -135,7 +135,7 @@ In the case of Postgres, this is how you would set up a the database on a debian
 - Install postgresql:
 
   - Debian/Ubuntu:
-  
+
     `sudo apt-get update && sudo apt-get install postgresql`
 
   - Arch Linux:

@@ -212,7 +212,6 @@ def is_locked(chat_id, lock_type):
     elif lock_type == "inline":
         return curr_perm.inline
 
-
 def is_restr_locked(chat_id, lock_type):
     curr_restr = SESSION.query(Restrictions).get(str(chat_id))
     SESSION.close()

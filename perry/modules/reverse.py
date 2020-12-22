@@ -104,19 +104,19 @@ def reverse(update, context):
             xx = context.bot.send_message(
                 chat_id,
                 "Image was successfully uploaded to Google."
-                "\nParsing source now. Maybe.",
+                "\nParsing source now...",
                 reply_to_message_id=rtmid,
             )
         else:
             xx = context.bot.send_message(
                 chat_id,
-                "Google told me to go away.",
+                "An error occured while parsing source.",
                 reply_to_message_id=rtmid,
             )
             return
 
         os.remove(imagename)
-        match = ParseSauce(fetchUrl + "&hl=en")
+        match = ParseSauce(fetchUrl + "&preferences?hl=en&fg=1#languages")
         guess = match["best_guess"]
         if match["override"] and not match["override"] == "":
             imgspage = match["override"]

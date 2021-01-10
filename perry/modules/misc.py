@@ -319,8 +319,11 @@ def ud(update, context):
         return
     try:
         results = get(f"http://api.urbandictionary.com/v0/define?term={text}").json()
-        reply_text = f'Word: {text}\nDefinition: {results["list"][0]["definition"]}'
-        reply_text += f'\n\nExample: {results["list"][0]["example"]}'
+        reply_text = (
+            f"Word: {text}\n\n"
+            f'Definition:\n{results["list"][0]["definition"]}\n\n'
+            f'Example:\n{results["list"][0]["example"]}\n\n'
+        )
     except IndexError:
         reply_text = (
             f"Word: {text}\nResults: Sorry could not find any matching results!"
@@ -506,87 +509,99 @@ def stats(update, context):
     )
 
 
+@typing_action
 def github(update, context):
     message = update.effective_message
     args = context.args
     text = " ".join(args).lower()
     usr = get(f"https://api.github.com/users/{text}").json()
-    if usr.get("login"):
-        text = f"*Username:* [{usr['login']}](https://github.com/{usr['login']})"
+    if len(args) >= 1:
+        if usr.get("login"):
+            text = f"*Username:* [{usr['login']}](https://github.com/{usr['login']})"
 
-        whitelist = [
-            "name",
-            "id",
-            "type",
-            "location",
-            "blog",
-            "bio",
-            "followers",
-            "following",
-            "hireable",
-            "public_gists",
-            "public_repos",
-            "email",
-            "company",
-            "updated_at",
-            "created_at",
-        ]
-
-        difnames = {
-            "id": "Account ID",
-            "type": "Account type",
-            "created_at": "Account created at",
-            "updated_at": "Last updated",
-            "public_repos": "Public Repos",
-            "public_gists": "Public Gists",
-        }
-
-        goaway = [None, 0, "null", ""]
-
-        for x, y in usr.items():
-            if x in whitelist:
-                x = difnames.get(x, x.title())
-
-                if x in ["Account created at", "Last updated"]:
-                    y = datetime.strptime(y, "%Y-%m-%dT%H:%M:%SZ")
-
-                if y not in goaway:
-                    if x == "Blog":
-                        x = "Website"
-                        y = f"[Here!]({y})"
-                        text += "\n*{}:* {}".format(x, y)
-                    else:
-                        text += "\n*{}:* `{}`".format(x, y)
-        reply_text = text
-    else:
-        reply_text = "User not found. Make sure you entered valid username!"
-    message.reply_text(
-        reply_text,
-        parse_mode=ParseMode.MARKDOWN,
-        disable_web_page_preview=True,
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        text=f"{usr['login']}'s profile", url=f"{usr['html_url']}"
-                    )
-                ]
+            whitelist = [
+                "name",
+                "id",
+                "type",
+                "location",
+                "blog",
+                "bio",
+                "followers",
+                "following",
+                "hireable",
+                "public_gists",
+                "public_repos",
+                "email",
+                "company",
+                "updated_at",
+                "created_at",
             ]
-        ),
-    )
+
+            difnames = {
+                "id": "Account ID",
+                "type": "Account type",
+                "created_at": "Account created at",
+                "updated_at": "Last updated",
+                "public_repos": "Public Repos",
+                "public_gists": "Public Gists",
+            }
+
+            goaway = [None, 0, "null", ""]
+
+            for x, y in usr.items():
+                if x in whitelist:
+                    x = difnames.get(x, x.title())
+
+                    if x in ["Account created at", "Last updated"]:
+                        y = datetime.strptime(y, "%Y-%m-%dT%H:%M:%SZ")
+
+                    if y not in goaway:
+                        if x == "Blog":
+                            x = "Website"
+                            y = f"[Here!]({y})"
+                            text += "\n*{}:* {}".format(x, y)
+                        else:
+                            text += "\n*{}:* `{}`".format(x, y)
+
+            chat = update.effective_chat
+            dispatcher.bot.send_photo(
+                "{}".format(chat.id),
+                f"{usr['html_url']}",
+                caption=text,
+                parse_mode=ParseMode.MARKDOWN,
+                # disable_web_page_preview=True,
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                text=f"{usr['login']}'s profile",
+                                url=f"{usr['html_url']}",
+                            )
+                        ]
+                    ]
+                ),
+            )
+        else:
+            message.reply_text = "User not found. Make sure you entered valid username!"
+    else:
+        message.reply_text("Enter the GitHub username you want stats for!")
 
 
+@typing_action
 def repo(update, context):
     message = update.effective_message
     args = context.args
     text = " ".join(args).lower()
     usr = get(f"https://api.github.com/users/{text}/repos?per_page=40").json()
-    reply_text = f"*{text}*" + "*'s*" + "* Repos:*\n"
-    for i in range(len(usr)):
-        reply_text += f"[{usr[i]['name']}]({usr[i]['html_url']})\n"
-    message.reply_text(
-        reply_text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True
-    )
+    if len(args) >= 1:
+        reply_text = f"*{text}*" + "*'s*" + "* Repos:*\n"
+        for i in range(len(usr)):
+            reply_text += f"[{usr[i]['name']}]({usr[i]['html_url']})\n"
+        message.reply_text(
+            reply_text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True
+        )
+    else:
+        message.reply_text("Enter someone's GitHub username to view their repos!")
 
 
 # /exec: Enables the OWNER and SUDO_USERS to execute python code using the bot.

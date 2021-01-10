@@ -479,13 +479,7 @@ def shell(update, context):
         )
         stdout, stderr = res.communicate()
         result = str(stdout.decode().strip()) + str(stderr.decode().strip())
-<<<<<<< HEAD
         rep.edit_text("<pre>" + escape(result) + "</pre>", parse_mode=ParseMode.HTML)
-=======
-        rep.edit_text(
-            "<pre>" + escape(result) + "</pre>", parse_mode=ParseMode.HTML
-        )
->>>>>>> 0b5e2dad5d8d19aa1d2ee105fbafacc3696c3eab
     except Exception as excp:
         if hasattr(excp, "message"):
             if str(excp.message) == "Message must be non-empty":
@@ -620,20 +614,10 @@ __mod_name__ = "Miscs"
 ID_HANDLER = DisableAbleCommandHandler("id", get_id, pass_args=True)
 INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
 ECHO_HANDLER = CommandHandler("echo", echo, filters=CustomFilters.sudo_filter)
-<<<<<<< HEAD
 MD_HELP_HANDLER = CommandHandler("markdownhelp", markdown_help, filters=Filters.private)
 STATS_HANDLER = CommandHandler("stats", stats, filters=Filters.user(OWNER_ID))
 GDPR_HANDLER = CommandHandler("gdpr", gdpr, filters=Filters.private)
 WIKI_HANDLER = DisableAbleCommandHandler("wiki", wiki)
-=======
-MD_HELP_HANDLER = CommandHandler(
-    "markdownhelp", markdown_help, filters=Filters.private
-)
-STATS_HANDLER = CommandHandler("stats", stats, filters=Filters.user(OWNER_ID))
-GDPR_HANDLER = CommandHandler("gdpr", gdpr, filters=Filters.private)
-WIKI_HANDLER = DisableAbleCommandHandler("wiki", wiki)
-WALLPAPER_HANDLER = DisableAbleCommandHandler("wall", wall, pass_args=True)
->>>>>>> 0b5e2dad5d8d19aa1d2ee105fbafacc3696c3eab
 UD_HANDLER = DisableAbleCommandHandler("ud", ud)
 GETLINK_HANDLER = CommandHandler(
     "getlink", getlink, pass_args=True, filters=Filters.user(OWNER_ID)
@@ -641,10 +625,6 @@ GETLINK_HANDLER = CommandHandler(
 STAFFLIST_HANDLER = CommandHandler(
     "staffids", staff_ids, filters=Filters.user(OWNER_ID)
 )
-<<<<<<< HEAD
-=======
-REDDIT_MEMES_HANDLER = DisableAbleCommandHandler("rmeme", rmemes)
->>>>>>> 0b5e2dad5d8d19aa1d2ee105fbafacc3696c3eab
 SRC_HANDLER = CommandHandler("source", src, filters=Filters.private)
 SHELL_HANDLER = CommandHandler(
     "shell", shell, filters=Filters.user(OWNER_ID), run_async=True

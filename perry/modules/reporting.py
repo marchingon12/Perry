@@ -139,6 +139,7 @@ def report(update, context) -> str:
 
             msg = f'{mention_html(user.id, user.first_name)} is calling for admins in "{html.escape(chat_name)}"!'
             link = ""
+            reply_markup = None
             should_forward = True
 
         for admin in admin_list:

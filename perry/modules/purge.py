@@ -72,14 +72,16 @@ async def purgeme(event):
 
     try:
         async for message in event.client.iter_messages(
-                event.chat_id, from_user='me'):
+            event.chat_id, from_user="me"
+        ):
             if i > count + 1:
                 break
             i += 1
             await message.delete()
 
             purged_msgs = await event.client.send_message(
-                event.chat_id, f"Purged {count} messages.",
+                event.chat_id,
+                f"Purged {count} messages.",
             )
 
             await asyncio.sleep(2)

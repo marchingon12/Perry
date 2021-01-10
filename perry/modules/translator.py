@@ -37,7 +37,8 @@ def gtrans(update, context):
             text = args[2]
             source_lang = args[1]
 
-        if source_lang.count('-') == 2:
+        dest_lang = None
+        if source_lang.count("-") == 2:
             for lang in problem_lang_code:
                 if lang in source_lang:
                     if source_lang.startswith(lang):
@@ -46,7 +47,7 @@ def gtrans(update, context):
                     else:
                         dest_lang = source_lang.split("-", 1)[1]
                         source_lang = source_lang.split("-", 1)[0]
-        elif source_lang.count('-') == 1:
+        elif source_lang.count("-") == 1:
             for lang in problem_lang_code:
                 if lang in source_lang:
                     dest_lang = source_lang
@@ -62,7 +63,7 @@ def gtrans(update, context):
         exclude_list = UNICODE_EMOJI.keys()
         for emoji in exclude_list:
             if emoji in text:
-                text = text.replace(emoji, '')
+                text = text.replace(emoji, "")
 
         trl = google_translator()
         if source_lang is None:
@@ -70,23 +71,28 @@ def gtrans(update, context):
             trans_str = trl.translate(text, lang_tgt=dest_lang)
             return msg.reply_text(
                 f"Translated from `{detection[0]}` to `{dest_lang}`:\n*{trans_str}*",
-                parse_mode=ParseMode.MARKDOWN)
+                parse_mode=ParseMode.MARKDOWN,
+            )
         else:
             trans_str = trl.translate(
-                text, lang_tgt=dest_lang, lang_src=source_lang)
+                text, lang_tgt=dest_lang, lang_src=source_lang
+            )
             msg.reply_text(
                 f"Translated from `{source_lang}` to `{dest_lang}`:\n*{trans_str}*",
-                parse_mode=ParseMode.MARKDOWN)
+                parse_mode=ParseMode.MARKDOWN,
+            )
 
     except IndexError:
         update.effective_message.reply_text(
             "Reply to messages to translate them into the preffered language!\n\n"
             "Example: `/tr en-de` to translate from English to German\n"
             "Or use: `/tr de` for auto detection and translating it into German.\n",
-            parse_mode=ParseMode.MARKDOWN)
+            parse_mode=ParseMode.MARKDOWN,
+        )
     except ValueError:
         update.effective_message.reply_text(
-            "The intended language is not found!")
+            "The intended language is not found!"
+        )
     else:
         return
 
@@ -165,8 +171,9 @@ The translate module is using Google Translate as the translation processing met
 __mod_name__ = "Translate"
 
 dispatcher.add_handler(
-    DisableAbleCommandHandler(["tr", "tl"], gtrans,
-                              pass_args=True, run_async=True)
+    DisableAbleCommandHandler(
+        ["tr", "tl"], gtrans, pass_args=True, run_async=True
+    )
 )
 dispatcher.add_handler(DisableAbleCommandHandler("tts", gtts, pass_args=True))
 dispatcher.add_handler(DisableAbleCommandHandler("splcheck", spellcheck))

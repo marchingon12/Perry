@@ -2,6 +2,7 @@ perry/config.py
 logfile
 perry.session
 perry.session-journal
+venv/
 *.pyc
 .idea/
 .project

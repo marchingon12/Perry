@@ -19,7 +19,7 @@ def magisk(update, context):
     for type, branch in {
         "Stable": ["master/stable", "master"],
         "Beta": ["master/beta", "master"],
-        "Canary": ["canary/canary", "canary"]
+        "Canary": ["canary/canary", "canary"],
     }.items():
         data = get(url + branch[0] + ".json").json()
         if type != "Canary":
@@ -53,7 +53,7 @@ def magisk(update, context):
             return
 
 
-@ typing_action
+@typing_action
 def twrp(update, context):
     args = context.args
     if len(args) == 0:

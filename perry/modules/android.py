@@ -37,29 +37,18 @@ def magisk(update, context):
                 f'• Uninstaller - [{data["magisk"]["version"]}-{data["magisk"]["versionCode"]}]({url}{branch[1]}/{data["uninstaller"]["link"]})\n\n'
             )
 
-    del_msg = update.message.reply_text(
+    update.message.reply_text(
         "*Latest Magisk Releases:*\n\n{}".format(releases),
         parse_mode=ParseMode.MARKDOWN,
         disable_web_page_preview=True,
     )
-    time.sleep(300)
-    try:
-        del_msg.delete()
-        update.effective_message.delete()
-    except BadRequest as err:
-        if (err.message == "Message to delete not found") or (
-            err.message == "Message can't be deleted"
-        ):
-            return
 
 
 @typing_action
 def twrp(update, context):
     args = context.args
     if len(args) == 0:
-        reply = (
-            "No codename provided, write a codename for fetching informations."
-        )
+        reply = "No codename provided, write a codename for fetching informations."
         del_msg = update.effective_message.reply_text(
             "{}".format(reply),
             parse_mode=ParseMode.MARKDOWN,
@@ -95,9 +84,7 @@ def twrp(update, context):
     else:
         reply = f"*Latest Official TWRP for {_device}*\n"
         db = get(DEVICES_DATA).json()
-        newdevice = (
-            _device.strip("lte") if _device.startswith("beyond") else _device
-        )
+        newdevice = _device.strip("lte") if _device.startswith("beyond") else _device
         try:
             brand = db[newdevice][0]["brand"]
             name = db[newdevice][0]["name"]

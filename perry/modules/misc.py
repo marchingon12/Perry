@@ -1,10 +1,15 @@
 import html
-import random, re
+import random
+import re
 import wikipedia
-import subprocess, sys, os
+import subprocess
+import sys
+import os
 from typing import Optional, List
 from requests import get
 from html import escape
+from datetime import datetime
+from google_trans_new import LANGUAGES, google_translator
 
 from io import BytesIO
 from random import randint
@@ -65,9 +70,7 @@ def get_id(update, context):
         else:
             user = context.bot.get_chat(user_id)
             update.effective_message.reply_text(
-                "{}'s id is `{}`.".format(
-                    escape_markdown(user.first_name), user.id
-                ),
+                "{}'s id is `{}`.".format(escape_markdown(user.first_name), user.id),
                 parse_mode=ParseMode.MARKDOWN,
             )
     else:
@@ -193,7 +196,8 @@ def info(update, context):
     except IndexError:
         context.bot.sendChatAction(chat.id, "typing")
         msg.reply_text(
-            text, parse_mode=ParseMode.HTML,
+            text,
+            parse_mode=ParseMode.HTML,
         )
     finally:
         del_msg.delete()
@@ -259,9 +263,7 @@ Keep in mind that your message <b>MUST</b> contain some text other than just a b
 
 @typing_action
 def markdown_help(update, context):
-    update.effective_message.reply_text(
-        MARKDOWN_HELP, parse_mode=ParseMode.HTML
-    )
+    update.effective_message.reply_text(MARKDOWN_HELP, parse_mode=ParseMode.HTML)
     update.effective_message.reply_text(
         "Try forwarding the following message to me, and you'll see!"
     )
@@ -280,12 +282,12 @@ def wiki(update, context):
         update.effective_message.reply_text("Enter keywords!")
     else:
         try:
-            pertama = update.effective_message.reply_text("🔄 Loading...")
+            pertama = update.effective_message.reply_text("⌛ Loading...")
             keyboard = InlineKeyboardMarkup(
                 [
                     [
                         InlineKeyboardButton(
-                            text="🔧 More Info...",
+                            text="🔍 More Info...",
                             url=wikipedia.page(kueri).url,
                         )
                     ]
@@ -315,19 +317,60 @@ def ud(update, context):
     if not text:
         msg.reply_text("Please enter keywords to search!")
         return
-    elif text == "starry":
-        msg.reply_text("Fek off bitch!")
+    try:
+        results = get(f"http://api.urbandictionary.com/v0/define?term={text}").json()
+        reply_text = f'Word: {text}\nDefinition: {results["list"][0]["definition"]}'
+        reply_text += f'\n\nExample: {results["list"][0]["example"]}'
+    except IndexError:
+        reply_text = (
+            f"Word: {text}\nResults: Sorry could not find any matching results!"
+        )
+    ignore_chars = "[]"
+    reply = reply_text
+    for chars in ignore_chars:
+        reply = reply.replace(chars, "")
+    if len(reply) >= 4096:
+        reply = reply[:4096]  # max msg lenth of tg.
+    try:
+        msg.reply_text(reply)
+    except BadRequest as err:
+        msg.reply_text(f"Error! {err.message}")
+
+
+@typing_action
+def dictionary(update, context):
+    msg = update.effective_message
+    lang, text = update.effective_message.text.split(None, 2)[1:]
+    if not text:
+        msg.reply_text("Please enter keywords to search!")
         return
     try:
         results = get(
-            f"http://api.urbandictionary.com/v0/define?term={text}"
+            f"https://api.dictionaryapi.dev/api/v2/entries/{lang}/{text}"
         ).json()
+        synonyms = results[0]["meanings"][0]["definitions"][0]["synonyms"]
         reply_text = (
-            f'Word: {text}\nDefinition: {results["list"][0]["definition"]}'
+            f'Word: {results[0]["word"]}\n\n'
+            f'× Type: {results[0]["meanings"][0]["partOfSpeech"]}\n\n'
+            f'× Meaning: {results[0]["meanings"][0]["definitions"][0]["definition"]}\n\n'
+            f'× Example: {results[0]["meanings"][0]["definitions"][0]["example"]}\n\n'
+            # f"Synonyms:"
+            # for synonyms in results[0]["meanings"][0]["definitions"]:
+            #     length = len(synonyms)
+            #     if length == 0:
+            #         "No synonyms found!"
+            #     else:
+            #         print(synonyms)
+            # if get({synonyms[0]}).json() == null:
+            f"× Synonyms: {synonyms[0]}, {synonyms[1]}, {synonyms[2]}\n"
+            # for definition in results[0]["meanings"][0]["definitions"]:
+            #     f'{[0]["definition"]}'
+            #     f'{[0]["example"]}'
         )
-        reply_text += f'\n\nExample: {results["list"][0]["example"]}'
     except IndexError:
-        reply_text = f"Word: {text}\nResults: Sorry could not find any matching results!"
+        reply_text = (
+            f"Word: {text}\nResults: Sorry, could not find any matching results!"
+        )
     ignore_chars = "[]"
     reply = reply_text
     for chars in ignore_chars:
@@ -348,52 +391,6 @@ def src(update, context):
     )
 
 
-@send_action(ChatAction.UPLOAD_PHOTO)
-def wall(update, context):
-    chat_id = update.effective_chat.id
-    msg = update.effective_message
-    msg_id = update.effective_message.message_id
-    args = context.args
-    query = " ".join(args)
-    if not query:
-        msg.reply_text("Please enter a query!")
-        return
-    else:
-        caption = query
-        term = query.replace(" ", "%20")
-        json_rep = r.get(
-            f"https://wall.alphacoders.com/api2.0/get.php?auth={WALL_API}&method=search&term={term}"
-        ).json()
-        if not json_rep.get("success"):
-            msg.reply_text("An error occurred!")
-
-        else:
-            wallpapers = json_rep.get("wallpapers")
-            if not wallpapers:
-                msg.reply_text("No results found! Refine your search.")
-                return
-            else:
-                index = randint(0, len(wallpapers) - 1)  # Choose random index
-                wallpaper = wallpapers[index]
-                wallpaper = wallpaper.get("url_image")
-                wallpaper = wallpaper.replace("\\", "")
-                context.bot.send_photo(
-                    chat_id,
-                    photo=wallpaper,
-                    caption="Preview",
-                    reply_to_message_id=msg_id,
-                    timeout=60,
-                )
-                context.bot.send_document(
-                    chat_id,
-                    document=wallpaper,
-                    filename="wallpaper",
-                    caption=caption,
-                    reply_to_message_id=msg_id,
-                    timeout=60,
-                )
-
-
 @typing_action
 def getlink(update, context):
     args = context.args
@@ -412,9 +409,7 @@ def getlink(update, context):
                 links += str(chat_id) + ":\n" + invitelink + "\n"
             else:
                 links += (
-                    str(chat_id)
-                    + ":\nI don't have access to the invite link."
-                    + "\n"
+                    str(chat_id) + ":\nI don't have access to the invite link." + "\n"
                 )
         except BadRequest as excp:
             links += str(chat_id) + ":\n" + excp.message + "\n"
@@ -422,57 +417,6 @@ def getlink(update, context):
             links += str(chat_id) + ":\n" + excp.message + "\n"
 
     message.reply_text(links)
-
-
-@send_action(ChatAction.UPLOAD_PHOTO)
-def rmemes(update, context):
-    msg = update.effective_message
-    chat = update.effective_chat
-
-    SUBREDS = [
-        "meirl",
-        "dankmemes",
-        "AdviceAnimals",
-        "memes",
-        "meme",
-        "memes_of_the_dank",
-        "PornhubComments",
-        "teenagers",
-        "memesIRL",
-        "insanepeoplefacebook",
-        "terriblefacebookmemes",
-    ]
-
-    subreddit = random.choice(SUBREDS)
-    res = r.get(f"https://meme-api.herokuapp.com/gimme/{subreddit}")
-
-    if res.status_code != 200:  # Like if api is down?
-        msg.reply_text("Sorry some error occurred :(")
-        return
-    else:
-        res = res.json()
-
-    rpage = res.get(str("subreddit"))  # Subreddit
-    title = res.get(str("title"))  # Post title
-    memeu = res.get(str("url"))  # meme pic url
-    plink = res.get(str("postLink"))
-
-    caps = f"× <b>Title</b>: {title}\n"
-    caps += f"× <b>Subreddit:</b> <pre>r/{rpage}</pre>"
-
-    keyb = [[InlineKeyboardButton(text="Subreddit Postlink 🔗", url=plink)]]
-    try:
-        context.bot.send_photo(
-            chat.id,
-            photo=memeu,
-            caption=(caps),
-            reply_markup=InlineKeyboardMarkup(keyb),
-            timeout=60,
-            parse_mode=ParseMode.HTML,
-        )
-
-    except BadRequest as excp:
-        return msg.reply_text(f"Error! {excp.message}")
 
 
 @typing_action
@@ -535,16 +479,12 @@ def shell(update, context):
         )
         stdout, stderr = res.communicate()
         result = str(stdout.decode().strip()) + str(stderr.decode().strip())
-        rep.edit_text(
-            "<pre>" + escape(result) + "</pre>",
-            parse_mode=ParseMode.HTML
-        )
+        rep.edit_text("<pre>" + escape(result) + "</pre>", parse_mode=ParseMode.HTML)
     except Exception as excp:
         if hasattr(excp, "message"):
             if str(excp.message) == "Message must be non-empty":
                 return msg.edit_text("None")
             rep.edit_text(str(excp))
-        
 
 
 def staff_ids(update, context):
@@ -566,19 +506,104 @@ def stats(update, context):
     )
 
 
-# /ip: Enables OWNER to get IP Address of hosted server.
+def github(update, context):
+    message = update.effective_message
+    args = context.args
+    text = " ".join(args).lower()
+    usr = get(f"https://api.github.com/users/{text}").json()
+    if usr.get("login"):
+        text = f"*Username:* [{usr['login']}](https://github.com/{usr['login']})"
+
+        whitelist = [
+            "name",
+            "id",
+            "type",
+            "location",
+            "blog",
+            "bio",
+            "followers",
+            "following",
+            "hireable",
+            "public_gists",
+            "public_repos",
+            "email",
+            "company",
+            "updated_at",
+            "created_at",
+        ]
+
+        difnames = {
+            "id": "Account ID",
+            "type": "Account type",
+            "created_at": "Account created at",
+            "updated_at": "Last updated",
+            "public_repos": "Public Repos",
+            "public_gists": "Public Gists",
+        }
+
+        goaway = [None, 0, "null", ""]
+
+        for x, y in usr.items():
+            if x in whitelist:
+                x = difnames.get(x, x.title())
+
+                if x in ["Account created at", "Last updated"]:
+                    y = datetime.strptime(y, "%Y-%m-%dT%H:%M:%SZ")
+
+                if y not in goaway:
+                    if x == "Blog":
+                        x = "Website"
+                        y = f"[Here!]({y})"
+                        text += "\n*{}:* {}".format(x, y)
+                    else:
+                        text += "\n*{}:* `{}`".format(x, y)
+        reply_text = text
+    else:
+        reply_text = "User not found. Make sure you entered valid username!"
+    message.reply_text(
+        reply_text,
+        parse_mode=ParseMode.MARKDOWN,
+        disable_web_page_preview=True,
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        text=f"{usr['login']}'s profile", url=f"{usr['html_url']}"
+                    )
+                ]
+            ]
+        ),
+    )
+
+
+def repo(update, context):
+    message = update.effective_message
+    args = context.args
+    text = " ".join(args).lower()
+    usr = get(f"https://api.github.com/users/{text}/repos?per_page=40").json()
+    reply_text = f"*{text}*" + "*'s*" + "* Repos:*\n"
+    for i in range(len(usr)):
+        reply_text += f"[{usr[i]['name']}]({usr[i]['html_url']})\n"
+    message.reply_text(
+        reply_text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True
+    )
+
+
 # /exec: Enables the OWNER and SUDO_USERS to execute python code using the bot.
 # /shell: Enables the OWNER to run bash commands within the server using the bot.
 # /echo: For SUDO_USERS, Perry will write and replace your message.
+# /stats: OWNER can call bot stats.
+# /getlink: OWNER can get group link by using group id.
 __help__ = """
 An "odds and ends" module for small, simple commands which don't really fit anywhere
 
  × /id: Get the current group id. If used by replying to a message, gets that user's id.
  × /info: Get information about a user.
- × /wiki: Search wikipedia articles.
- × /rmeme: Sends random meme scraped from reddit.
+ × /source: Get the codebase source link.
+ × /gitstats <username>: Get Github stats of a user.
+ × /repo <username>: Displays a list of hyperlinked repos of a user on Github.
+ × /wiki <query>: Search wikipedia articles.
  × /ud <query> : Search stuffs in urban dictionary.
- × /wall <query> : Get random wallpapers directly from bot!
  × /reverse: Reverse searches image or stickers on google.
  × /gdpr: Deletes your information from the bot's database. Private chats only.
  × /markdownhelp: Quick summary of how markdown works in telegram - can only be called in private chats.
@@ -586,53 +611,32 @@ An "odds and ends" module for small, simple commands which don't really fit anyw
 
 __mod_name__ = "Miscs"
 
-ID_HANDLER = DisableAbleCommandHandler(
-    "id", get_id, pass_args=True
-)
-INFO_HANDLER = DisableAbleCommandHandler(
-    "info", info, pass_args=True
-)
-ECHO_HANDLER = CommandHandler(
-    "echo", echo, filters=CustomFilters.sudo_filter
-)
-MD_HELP_HANDLER = CommandHandler(
-    "markdownhelp", markdown_help, filters=Filters.private
-)
-STATS_HANDLER = CommandHandler(
-    "stats", stats, filters=Filters.user(OWNER_ID)
-)
-GDPR_HANDLER = CommandHandler(
-    "gdpr", gdpr, filters=Filters.private
-)
-WIKI_HANDLER = DisableAbleCommandHandler(
-    "wiki", wiki
-)
-WALLPAPER_HANDLER = DisableAbleCommandHandler(
-    "wall", wall, pass_args=True
-)
-UD_HANDLER = DisableAbleCommandHandler(
-    "ud", ud
-)
+ID_HANDLER = DisableAbleCommandHandler("id", get_id, pass_args=True)
+INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
+ECHO_HANDLER = CommandHandler("echo", echo, filters=CustomFilters.sudo_filter)
+MD_HELP_HANDLER = CommandHandler("markdownhelp", markdown_help, filters=Filters.private)
+STATS_HANDLER = CommandHandler("stats", stats, filters=Filters.user(OWNER_ID))
+GDPR_HANDLER = CommandHandler("gdpr", gdpr, filters=Filters.private)
+WIKI_HANDLER = DisableAbleCommandHandler("wiki", wiki)
+UD_HANDLER = DisableAbleCommandHandler("ud", ud)
 GETLINK_HANDLER = CommandHandler(
     "getlink", getlink, pass_args=True, filters=Filters.user(OWNER_ID)
 )
 STAFFLIST_HANDLER = CommandHandler(
     "staffids", staff_ids, filters=Filters.user(OWNER_ID)
 )
-REDDIT_MEMES_HANDLER = DisableAbleCommandHandler(
-    "rmeme", rmemes
-)
-SRC_HANDLER = CommandHandler(
-    "source", src, filters=Filters.private
-)
+SRC_HANDLER = CommandHandler("source", src, filters=Filters.private)
 SHELL_HANDLER = CommandHandler(
     "shell", shell, filters=Filters.user(OWNER_ID), run_async=True
 )
 PYEVAL_HANDLER = CommandHandler(
     "exec", pyeval, filters=CustomFilters.sudo_filter, run_async=True
 )
+GITHUB_HANDLER = CommandHandler("gitstats", github, pass_args=True, run_async=True)
+REPO_HANDLER = CommandHandler("repo", repo, pass_args=True, run_async=True)
+DICT_HANDLER = CommandHandler("dict", dictionary, pass_args=True, run_async=True)
 
-dispatcher.add_handler(WALLPAPER_HANDLER)
+
 dispatcher.add_handler(UD_HANDLER)
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(INFO_HANDLER)
@@ -643,7 +647,9 @@ dispatcher.add_handler(GDPR_HANDLER)
 dispatcher.add_handler(WIKI_HANDLER)
 dispatcher.add_handler(GETLINK_HANDLER)
 dispatcher.add_handler(STAFFLIST_HANDLER)
-dispatcher.add_handler(REDDIT_MEMES_HANDLER)
 dispatcher.add_handler(SRC_HANDLER)
 dispatcher.add_handler(SHELL_HANDLER)
 dispatcher.add_handler(PYEVAL_HANDLER)
+dispatcher.add_handler(GITHUB_HANDLER)
+dispatcher.add_handler(REPO_HANDLER)
+dispatcher.add_handler(DICT_HANDLER)

@@ -49,12 +49,10 @@ def import_data(update, context):
 
     if msg.reply_to_message and msg.reply_to_message.document:
         try:
-            file_info = context.bot.get_file(
-                msg.reply_to_message.document.file_id
-            )
+            file_info = context.bot.get_file(msg.reply_to_message.document.file_id)
         except BadRequest:
             msg.reply_text(
-                "Try downloading and uploading the file yourself again, This one seem broken!"
+                "Try downloading and uploading the file again, this one seems broken!"
             )
             return
 
@@ -105,7 +103,7 @@ def import_data(update, context):
             )
 
             LOGGER.exception(
-                "Imprt for the chat %s with the name %s failed.",
+                "Import for the chat %s with the name %s failed.",
                 str(chat.id),
                 str(chat.title),
             )
@@ -194,43 +192,31 @@ def export_data(update, context):
                     buttonlist.append(
                         ("{}".format(btn.name), "{}".format(btn.url), False)
                     )
-            isicat += (
-                "###button###: {}<###button###>{}<###splitter###>".format(
-                    note.value, str(buttonlist)
-                )
+            isicat += "###button###: {}<###button###>{}<###splitter###>".format(
+                note.value, str(buttonlist)
             )
             buttonlist.clear()
         elif note.msgtype == 2:
             isicat += "###sticker###:{}<###splitter###>".format(note.file)
         elif note.msgtype == 3:
-            isicat += (
-                "###file###:{}<###TYPESPLIT###>{}<###splitter###>".format(
-                    note.file, note.value
-                )
+            isicat += "###file###:{}<###TYPESPLIT###>{}<###splitter###>".format(
+                note.file, note.value
             )
         elif note.msgtype == 4:
-            isicat += (
-                "###photo###:{}<###TYPESPLIT###>{}<###splitter###>".format(
-                    note.file, note.value
-                )
+            isicat += "###photo###:{}<###TYPESPLIT###>{}<###splitter###>".format(
+                note.file, note.value
             )
         elif note.msgtype == 5:
-            isicat += (
-                "###audio###:{}<###TYPESPLIT###>{}<###splitter###>".format(
-                    note.file, note.value
-                )
+            isicat += "###audio###:{}<###TYPESPLIT###>{}<###splitter###>".format(
+                note.file, note.value
             )
         elif note.msgtype == 6:
-            isicat += (
-                "###voice###:{}<###TYPESPLIT###>{}<###splitter###>".format(
-                    note.file, note.value
-                )
+            isicat += "###voice###:{}<###TYPESPLIT###>{}<###splitter###>".format(
+                note.file, note.value
             )
         elif note.msgtype == 7:
-            isicat += (
-                "###video###:{}<###TYPESPLIT###>{}<###splitter###>".format(
-                    note.file, note.value
-                )
+            isicat += "###video###:{}<###TYPESPLIT###>{}<###splitter###>".format(
+                note.file, note.value
             )
         elif note.msgtype == 8:
             isicat += "###video_note###:{}<###TYPESPLIT###>{}<###splitter###>".format(
@@ -239,9 +225,9 @@ def export_data(update, context):
         else:
             isicat += "{}<###splitter###>".format(note.value)
     for x in range(count):
-        notes[
-            "#{}".format(namacat.split("<###splitter###>")[x])
-        ] = "{}".format(isicat.split("<###splitter###>")[x])
+        notes["#{}".format(namacat.split("<###splitter###>")[x])] = "{}".format(
+            isicat.split("<###splitter###>")[x]
+        )
     # Rules
     rules = rulessql.get_rules(chat_id)
     # Blacklist
@@ -348,7 +334,7 @@ def export_data(update, context):
     try:
         context.bot.sendMessage(
             MESSAGE_DUMP,
-            "*Successfully imported backup:*\nChat: `{}`\nChat ID: `{}`\nOn: `{}`".format(
+            "*Successfully exported backup:*\nChat: `{}`\nChat ID: `{}`\nOn: `{}`".format(
                 chat.title, chat_id, tgl
             ),
             parse_mode=ParseMode.MARKDOWN,
@@ -357,8 +343,8 @@ def export_data(update, context):
         pass
     context.bot.sendDocument(
         current_chat_id,
-        document=open("perry{}.backup".format(chat_id), "rb"),
-        caption="*Successfully imported backup:*\nChat: `{}`\nChat ID: `{}`\nOn: `{}`\n\nNote: This `perry-Backup` is specially made for notes.".format(
+        document=open("perry_(testing){}.backup".format(chat_id), "rb"),
+        caption="*Successfully exported backup:*\nChat: `{}`\nChat ID: `{}`\nOn: `{}`\n\nNote: This `perry-Backup` is specially made for notes.".format(
             chat.title, chat_id, tgl
         ),
         timeout=360,

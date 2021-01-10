@@ -284,15 +284,13 @@ def help_button(update, context):
         # ensure no spinny white circle
         context.bot.answer_callback_query(query.id)
     except Exception as excp:
-        if excp.message == "Message is not modified":
-            pass
-        elif excp.message == "Query_id_invalid":
-            pass
-        elif excp.message == "Message can't be deleted":
-            pass
-        else:
+        if excp.message not in {
+            "Message is not modified",
+            "Query_id_invalid",
+            "Message can't be deleted",
+        }:
             query.message.edit_text(excp.message)
-            LOGGER.exception("Exception in help buttons. %s", str(query.data))
+            LOGGER.exception('Exception in help buttons. %s', str(query.data))
 
 
 @typing_action
@@ -449,13 +447,11 @@ def settings_button(update, context):
         query.message.delete()
         context.bot.answer_callback_query(query.id)
     except Exception as excp:
-        if excp.message == "Message is not modified":
-            pass
-        elif excp.message == "Query_id_invalid":
-            pass
-        elif excp.message == "Message can't be deleted":
-            pass
-        else:
+        if excp.message not in {
+            "Message is not modified",
+            "Query_id_invalid",
+            "Message can't be deleted",
+        }:
             query.message.edit_text(excp.message)
             LOGGER.exception(
                 "Exception in settings buttons. %s", str(query.data)
@@ -600,7 +596,8 @@ def main():
 
     else:
         LOGGER.info("Using long polling.")
-        updater.start_polling(timeout=15, read_latency=4)
+        updater.start_polling(clean=True)
+        #updater.start_polling(timeout=15, read_latency=4)
         client.run_until_disconnected()
 
     updater.idle()

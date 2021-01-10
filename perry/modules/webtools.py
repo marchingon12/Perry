@@ -80,9 +80,7 @@ def speedtst(update, context):
 
 @typing_action
 def system_status(update, context):
-    uptime = datetime.datetime.fromtimestamp(boot_time()).strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    uptime = datetime.datetime.fromtimestamp(boot_time()).strftime("%Y-%m-%d %H:%M:%S")
     status = "<b>======[ SYSTEM INFO ]======</b>\n\n"
     status += "<b>System uptime:</b> <code>" + str(uptime) + "</code>\n"
 
@@ -103,16 +101,16 @@ def system_status(update, context):
     status += "<b>Python version:</b> <code>" + python_version() + "</code>\n"
     status += "<b>Library version:</b> <code>" + str(__version__) + "</code>\n"
     status += "<b>Spamwatch API:</b> <code>" + str(__sw__) + "</code>\n"
-    context.bot.sendMessage(
-        update.effective_chat.id, status, parse_mode=ParseMode.HTML
-    )
+    context.bot.sendMessage(update.effective_chat.id, status, parse_mode=ParseMode.HTML)
 
 
+# /ip: Enables OWNER to get IP Address of hosted server.
+# /ping: Enables OWNER & SUDO_USERs to pings the server.
+# /speedtest: Enables OWNER & SUDO_USERs to get a quick speed test of server.
+# /sysinfo: Enables OWNER & SUDO_USERs to get system info of hosted server.
 IP_HANDLER = CommandHandler("ip", get_bot_ip, filters=Filters.chat(OWNER_ID))
 PING_HANDLER = CommandHandler("ping", ping, filters=CustomFilters.sudo_filter)
-SPEED_HANDLER = CommandHandler(
-    "speedtest", speedtst, filters=CustomFilters.sudo_filter
-)
+SPEED_HANDLER = CommandHandler("speedtest", speedtst, filters=CustomFilters.sudo_filter)
 SYS_STATUS_HANDLER = CommandHandler(
     "sysinfo", system_status, filters=CustomFilters.sudo_filter
 )

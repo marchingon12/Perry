@@ -51,10 +51,7 @@ def promote(update, context):
         return ""
 
     user_member = chat.get_member(user_id)
-    if (
-        user_member.status == "administrator"
-        or user_member.status == "creator"
-    ):
+    if user_member.status == "administrator" or user_member.status == "creator":
         message.reply_text("This person is already an admin...!")
         return ""
 
@@ -161,7 +158,6 @@ def demote(update, context):
 @can_pin
 @user_admin
 @loggable
-@typing_action
 def pin(update, context):
     args = context.args
     user = update.effective_user
@@ -211,7 +207,6 @@ def pin(update, context):
 @can_pin
 @user_admin
 @loggable
-@typing_action
 def unpin(update, context):
     chat = update.effective_chat
     user = update.effective_user
@@ -276,9 +271,7 @@ def invite(update, context):
 @typing_action
 def adminlist(update, context):
     administrators = update.effective_chat.get_administrators()
-    text = "Admins in <b>{}</b>:".format(
-        update.effective_chat.title or "this chat"
-    )
+    text = "Admins in <b>{}</b>:".format(update.effective_chat.title or "this chat")
     for admin in administrators:
         user = admin.user
         status = admin.status
@@ -298,7 +291,6 @@ def adminlist(update, context):
 @bot_admin
 @can_promote
 @user_admin
-@typing_action
 def set_title(update, context):
     args = context.args
     chat = update.effective_chat
@@ -342,9 +334,7 @@ def set_title(update, context):
         )
 
     try:
-        context.bot.set_chat_administrator_custom_title(
-            chat.id, user_id, title
-        )
+        context.bot.set_chat_administrator_custom_title(chat.id, user_id, title)
         message.reply_text(
             "Sucessfully set title for <b>{}</b> to <code>{}</code>!".format(
                 user_member.user.first_name or user_id, title[:16]
@@ -353,9 +343,7 @@ def set_title(update, context):
         )
 
     except BadRequest:
-        message.reply_text(
-            "I can't set custom title for admins that I didn't promote!"
-        )
+        message.reply_text("I can't set custom title for admins that I didn't promote!")
 
 
 @bot_admin
@@ -462,9 +450,7 @@ def set_sticker(update, context):
         stkr = msg.reply_to_message.sticker.set_name
         try:
             context.bot.set_chat_sticker_set(chat.id, stkr)
-            msg.reply_text(
-                f"Successfully set new group stickers in {chat.title}!"
-            )
+            msg.reply_text(f"Successfully set new group stickers in {chat.title}!")
         except BadRequest as excp:
             if excp.message == "Participants_too_few":
                 return msg.reply_text(
@@ -472,9 +458,7 @@ def set_sticker(update, context):
                 )
             msg.reply_text(f"Error! {excp.message}.")
     else:
-        msg.reply_text(
-            "You need to reply to some sticker to set chat sticker set!"
-        )
+        msg.reply_text("You need to reply to some sticker to set chat sticker set!")
 
 
 @bot_admin
@@ -495,13 +479,9 @@ def set_desc(update, context):
         return msg.reply_text("Setting empty description won't do anything!")
     try:
         if len(desc) > 255:
-            return msg.reply_text(
-                "Description must needs to be under 255 characters!"
-            )
+            return msg.reply_text("Description must needs to be under 255 characters!")
         context.bot.set_chat_description(chat.id, desc)
-        msg.reply_text(
-            f"Successfully updated chat description in {chat.title}!"
-        )
+        msg.reply_text(f"Successfully updated chat description in {chat.title}!")
     except BadRequest as excp:
         msg.reply_text(f"Error! {excp.message}.")
 
@@ -546,29 +526,19 @@ UNPIN_HANDLER = CommandHandler("unpin", unpin, filters=Filters.group)
 
 INVITE_HANDLER = CommandHandler("invitelink", invite)
 CHAT_PIC_HANDLER = CommandHandler("setgpic", setchatpic, filters=Filters.group)
-DEL_CHAT_PIC_HANDLER = CommandHandler(
-    "delgpic", rmchatpic, filters=Filters.group
-)
+DEL_CHAT_PIC_HANDLER = CommandHandler("delgpic", rmchatpic, filters=Filters.group)
 SETCHAT_TITLE_HANDLER = CommandHandler(
     "setgtitle", setchat_title, filters=Filters.group
 )
-SETSTICKET_HANDLER = CommandHandler(
-    "setsticker", set_sticker, filters=Filters.group
-)
-SETDESC_HANDLER = CommandHandler(
-    "setdescription", set_desc, filters=Filters.group
-)
+SETSTICKET_HANDLER = CommandHandler("setsticker", set_sticker, filters=Filters.group)
+SETDESC_HANDLER = CommandHandler("setdescription", set_desc, filters=Filters.group)
 
 PROMOTE_HANDLER = CommandHandler(
     "promote", promote, pass_args=True, filters=Filters.group
 )
-DEMOTE_HANDLER = CommandHandler(
-    "demote", demote, pass_args=True, filters=Filters.group
-)
+DEMOTE_HANDLER = CommandHandler("demote", demote, pass_args=True, filters=Filters.group)
 
-SET_TITLE_HANDLER = DisableAbleCommandHandler(
-    "settitle", set_title, pass_args=True
-)
+SET_TITLE_HANDLER = DisableAbleCommandHandler("settitle", set_title, pass_args=True)
 ADMINLIST_HANDLER = DisableAbleCommandHandler(
     "adminlist", adminlist, filters=Filters.group
 )

@@ -2498,9 +2498,7 @@ MY_FEDS_LIST = CommandHandler("myfeds", get_myfeds_list)
 RENAME_FED = CommandHandler("renamefed", rename_fed)
 
 
-DELETEBTN_FED_HANDLER = CallbackQueryHandler(
-    del_fed_button, pattern=r"rmfed_"
-)
+DELETEBTN_FED_HANDLER = CallbackQueryHandler(del_fed_button, pattern=r"rmfed_")
 
 dispatcher.add_handler(NEW_FED_HANDLER)
 dispatcher.add_handler(DEL_FED_HANDLER)

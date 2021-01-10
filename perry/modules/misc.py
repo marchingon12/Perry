@@ -193,7 +193,8 @@ def info(update, context):
     except IndexError:
         context.bot.sendChatAction(chat.id, "typing")
         msg.reply_text(
-            text, parse_mode=ParseMode.HTML,
+            text,
+            parse_mode=ParseMode.HTML,
         )
     finally:
         del_msg.delete()
@@ -536,15 +537,13 @@ def shell(update, context):
         stdout, stderr = res.communicate()
         result = str(stdout.decode().strip()) + str(stderr.decode().strip())
         rep.edit_text(
-            "<pre>" + escape(result) + "</pre>",
-            parse_mode=ParseMode.HTML
+            "<pre>" + escape(result) + "</pre>", parse_mode=ParseMode.HTML
         )
     except Exception as excp:
         if hasattr(excp, "message"):
             if str(excp.message) == "Message must be non-empty":
                 return msg.edit_text("None")
             rep.edit_text(str(excp))
-        
 
 
 def staff_ids(update, context):
@@ -586,45 +585,25 @@ An "odds and ends" module for small, simple commands which don't really fit anyw
 
 __mod_name__ = "Miscs"
 
-ID_HANDLER = DisableAbleCommandHandler(
-    "id", get_id, pass_args=True
-)
-INFO_HANDLER = DisableAbleCommandHandler(
-    "info", info, pass_args=True
-)
-ECHO_HANDLER = CommandHandler(
-    "echo", echo, filters=CustomFilters.sudo_filter
-)
+ID_HANDLER = DisableAbleCommandHandler("id", get_id, pass_args=True)
+INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
+ECHO_HANDLER = CommandHandler("echo", echo, filters=CustomFilters.sudo_filter)
 MD_HELP_HANDLER = CommandHandler(
     "markdownhelp", markdown_help, filters=Filters.private
 )
-STATS_HANDLER = CommandHandler(
-    "stats", stats, filters=Filters.user(OWNER_ID)
-)
-GDPR_HANDLER = CommandHandler(
-    "gdpr", gdpr, filters=Filters.private
-)
-WIKI_HANDLER = DisableAbleCommandHandler(
-    "wiki", wiki
-)
-WALLPAPER_HANDLER = DisableAbleCommandHandler(
-    "wall", wall, pass_args=True
-)
-UD_HANDLER = DisableAbleCommandHandler(
-    "ud", ud
-)
+STATS_HANDLER = CommandHandler("stats", stats, filters=Filters.user(OWNER_ID))
+GDPR_HANDLER = CommandHandler("gdpr", gdpr, filters=Filters.private)
+WIKI_HANDLER = DisableAbleCommandHandler("wiki", wiki)
+WALLPAPER_HANDLER = DisableAbleCommandHandler("wall", wall, pass_args=True)
+UD_HANDLER = DisableAbleCommandHandler("ud", ud)
 GETLINK_HANDLER = CommandHandler(
     "getlink", getlink, pass_args=True, filters=Filters.user(OWNER_ID)
 )
 STAFFLIST_HANDLER = CommandHandler(
     "staffids", staff_ids, filters=Filters.user(OWNER_ID)
 )
-REDDIT_MEMES_HANDLER = DisableAbleCommandHandler(
-    "rmeme", rmemes
-)
-SRC_HANDLER = CommandHandler(
-    "source", src, filters=Filters.private
-)
+REDDIT_MEMES_HANDLER = DisableAbleCommandHandler("rmeme", rmemes)
+SRC_HANDLER = CommandHandler("source", src, filters=Filters.private)
 SHELL_HANDLER = CommandHandler(
     "shell", shell, filters=Filters.user(OWNER_ID), run_async=True
 )

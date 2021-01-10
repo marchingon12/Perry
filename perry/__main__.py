@@ -247,8 +247,13 @@ def help_button(update, context):
                 text=text,
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton(
-                        text="⬅️ Back", callback_data="help_back")]]
+                    [
+                        [
+                            InlineKeyboardButton(
+                                text="⬅️ Back", callback_data="help_back"
+                            )
+                        ]
+                    ]
                 ),
             )
 
@@ -306,9 +311,16 @@ def get_help(update, context):
         update.effective_message.reply_text(
             "Contact me in PM to get the list of possible commands.",
             reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton(
-                    text="Help", url="t.me/{}?start=help".format(context.bot.username),
-                )]]
+                [
+                    [
+                        InlineKeyboardButton(
+                            text="Help",
+                            url="t.me/{}?start=help".format(
+                                context.bot.username
+                            ),
+                        )
+                    ]
+                ]
             ),
         )
         return
@@ -325,8 +337,13 @@ def get_help(update, context):
             chat.id,
             text,
             InlineKeyboardMarkup(
-                [[InlineKeyboardButton(
-                    text="Back", callback_data="help_back")]]
+                [
+                    [
+                        InlineKeyboardButton(
+                            text="Back", callback_data="help_back"
+                        )
+                    ]
+                ]
             ),
         )
 
@@ -400,8 +417,14 @@ def settings_button(update, context):
                 text=text,
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton(
-                        text="Back", callback_data="stngs_back({})".format(chat_id),)]]
+                    [
+                        [
+                            InlineKeyboardButton(
+                                text="Back",
+                                callback_data="stngs_back({})".format(chat_id),
+                            )
+                        ]
+                    ]
                 ),
             )
 
@@ -476,9 +499,16 @@ def get_settings(update, context):
             msg.reply_text(
                 text,
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton(
-                        text="Settings",
-                        url="t.me/{}?start=stngs_{}".format(context.bot.username, chat.id),)]]
+                    [
+                        [
+                            InlineKeyboardButton(
+                                text="Settings",
+                                url="t.me/{}?start=stngs_{}".format(
+                                    context.bot.username, chat.id
+                                ),
+                            )
+                        ]
+                    ]
                 ),
             )
         else:

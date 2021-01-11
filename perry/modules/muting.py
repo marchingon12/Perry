@@ -55,9 +55,7 @@ def mute(update, context):
 
     if member:
         if is_user_admin(chat, user_id, member=member):
-            message.reply_text(
-                "Well i'm not gonna stop an admin from talking!"
-            )
+            message.reply_text("Well i'm not gonna stop an admin from talking!")
 
         elif member.can_send_messages is None or member.can_send_messages:
             context.bot.restrict_chat_member(
@@ -192,9 +190,7 @@ def temp_mute(update, context):
         return ""
 
     if not reason:
-        message.reply_text(
-            "You haven't specified a time to mute this user for!"
-        )
+        message.reply_text("You haven't specified a time to mute this user for!")
         return ""
 
     split_reason = reason.split(None, 1)
@@ -241,9 +237,7 @@ def temp_mute(update, context):
     except BadRequest as excp:
         if excp.message == "Reply message not found":
             # Do not reply
-            message.reply_text(
-                "shut up! 🤐 Taped for {}!".format(time_val), quote=False
-            )
+            message.reply_text("shut up! 🤐 Taped for {}!".format(time_val), quote=False)
             return log
         else:
             LOGGER.warning(update)
@@ -275,13 +269,13 @@ An example of temporarily mute someone:
 __mod_name__ = "Muting"
 
 MUTE_HANDLER = CommandHandler(
-    "mute", mute, pass_args=True, filters=Filters.group
+    "mute", mute, pass_args=True, filters=Filters.chat_type.groups
 )
 UNMUTE_HANDLER = CommandHandler(
-    "unmute", unmute, pass_args=True, filters=Filters.group
+    "unmute", unmute, pass_args=True, filters=Filters.chat_type.groups
 )
 TEMPMUTE_HANDLER = CommandHandler(
-    ["tmute", "tempmute"], temp_mute, pass_args=True, filters=Filters.group
+    ["tmute", "tempmute"], temp_mute, pass_args=True, filters=Filters.chat_type.groups
 )
 
 dispatcher.add_handler(MUTE_HANDLER)

@@ -96,9 +96,7 @@ def gban(update, context):
         return
 
     if user_id == context.bot.id:
-        message.reply_text(
-            "-_- So funny, lets gban myself why don't I? Nice try."
-        )
+        message.reply_text("-_- So funny, lets gban myself why don't I? Nice try.")
         return
 
     try:
@@ -112,9 +110,7 @@ def gban(update, context):
         return
 
     if user_chat.first_name == "":
-        message.reply_text(
-            "This is a deleted account! no point to gban them..."
-        )
+        message.reply_text("This is a deleted account! no point to gban them...")
         return
 
     if sql.is_user_gbanned(user_id):
@@ -133,7 +129,9 @@ def gban(update, context):
             banner = update.effective_user  # type: Optional[User]
             bannerid = banner.id
             bannername = banner.first_name
-            new_reason = f"{new_reason} // GBanned by {bannername} banner id: {bannerid}"
+            new_reason = (
+                f"{new_reason} // GBanned by {bannername} banner id: {bannerid}"
+            )
 
             context.bot.sendMessage(
                 MESSAGE_DUMP,
@@ -264,9 +262,7 @@ def ungban(update, context):
             if excp.message in UNGBAN_ERRORS:
                 pass
             else:
-                message.reply_text(
-                    "Could not un-gban due to: {}".format(excp.message)
-                )
+                message.reply_text("Could not un-gban due to: {}".format(excp.message))
                 context.bot.send_message(
                     OWNER_ID,
                     "Could not un-gban due to: {}".format(excp.message),
@@ -348,9 +344,7 @@ def enforce_gban(update, context):
     # Not using @restrict handler to avoid spamming - just ignore if cant gban.
     if (
         sql.does_chat_gban(update.effective_chat.id)
-        and update.effective_chat.get_member(
-            context.bot.id
-        ).can_restrict_members
+        and update.effective_chat.get_member(context.bot.id).can_restrict_members
     ):
         user = update.effective_user
         chat = update.effective_chat
@@ -425,9 +419,7 @@ def __migrate__(old_chat_id, new_chat_id):
 
 
 def __chat_settings__(chat_id, user_id):
-    return "This chat is enforcing *gbans*: `{}`.".format(
-        sql.does_chat_gban(chat_id)
-    )
+    return "This chat is enforcing *gbans*: `{}`.".format(sql.does_chat_gban(chat_id))
 
 
 __help__ = """
@@ -463,10 +455,10 @@ GBAN_LIST = CommandHandler(
 )
 
 GBAN_STATUS = CommandHandler(
-    "spamshield", gbanstat, pass_args=True, filters=Filters.group
+    "spamshield", gbanstat, pass_args=True, filters=Filters.chat_type.groups
 )
 
-GBAN_ENFORCER = MessageHandler(Filters.all & Filters.group, enforce_gban)
+GBAN_ENFORCER = MessageHandler(Filters.all & Filters.chat_type.groups, enforce_gban)
 
 dispatcher.add_handler(GBAN_HANDLER)
 dispatcher.add_handler(UNGBAN_HANDLER)

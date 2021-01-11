@@ -133,8 +133,7 @@ def get(bot, update, notename, show_none=True, no_format=False):
                 text = valid_format.format(
                     first=escape(message.from_user.first_name),
                     last=escape(
-                        message.from_user.last_name
-                        or message.from_user.first_name
+                        message.from_user.last_name or message.from_user.first_name
                     ),
                     fullname=" ".join(
                         [
@@ -355,9 +354,7 @@ def list_notes(update, context):
     for note in note_list:
         note_name = " × `{}`\n".format(note.name.lower())
         if len(msg) + len(note_name) > MAX_MESSAGE_LENGTH:
-            update.effective_message.reply_text(
-                msg, parse_mode=ParseMode.MARKDOWN
-            )
+            update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
             msg = ""
         msg += note_name
 
@@ -436,9 +433,7 @@ def rmbutton(update, context):
 
         for i in notelist:
             sql.rm_note(chat.id, i)
-        query.message.edit_text(
-            f"Successfully cleaned {count} notes in {chat.title}."
-        )
+        query.message.edit_text(f"Successfully cleaned {count} notes in {chat.title}.")
 
 
 def __import_data__(chat_id, data):
@@ -458,9 +453,7 @@ def __import_data__(chat_id, data):
             failures.append(notename)
             notedata = notedata[match.end() :].strip()
             if notedata:
-                sql.add_note_to_db(
-                    chat_id, notename[1:], notedata, sql.Types.TEXT
-                )
+                sql.add_note_to_db(chat_id, notename[1:], notedata, sql.Types.TEXT)
         elif matchsticker:
             content = notedata[matchsticker.end() :].strip()
             if content:
@@ -579,9 +572,7 @@ def __import_data__(chat_id, data):
 
 
 def __stats__():
-    return "× {} notes, across {} chats.".format(
-        sql.num_notes(), sql.num_chats()
-    )
+    return "× {} notes, across {} chats.".format(sql.num_notes(), sql.num_chats())
 
 
 def __migrate__(old_chat_id, new_chat_id):
@@ -635,16 +626,12 @@ HASH_GET_HANDLER = MessageHandler(Filters.regex(r"^#[^\s]+"), hash_get)
 SAVE_HANDLER = CommandHandler("save", save)
 DELETE_HANDLER = CommandHandler("clear", clear, pass_args=True)
 
-LIST_HANDLER = DisableAbleCommandHandler(
-    ["notes", "saved"], list_notes, admin_ok=True
-)
+LIST_HANDLER = DisableAbleCommandHandler(["notes", "saved"], list_notes, admin_ok=True)
 CLEARALLNOTES_HANDLER = CommandHandler(
-    "rmallnotes", clear_notes, filters=Filters.group
+    "rmallnotes", clear_notes, filters=Filters.chat_type.groups
 )
 
-RMBTN_HANDLER = CallbackQueryHandler(
-    rmbutton, pattern=r"rmnotes_", run_async=True
-)
+RMBTN_HANDLER = CallbackQueryHandler(rmbutton, pattern=r"rmnotes_", run_async=True)
 
 dispatcher.add_handler(GET_HANDLER)
 dispatcher.add_handler(SAVE_HANDLER)

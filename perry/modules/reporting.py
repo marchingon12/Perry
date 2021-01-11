@@ -38,9 +38,7 @@ def report_setting(update, context):
 
             elif args[0] in ("no", "off"):
                 sql.set_user_setting(chat.id, False)
-                msg.reply_text(
-                    "Turned off reporting! You wont get any reports."
-                )
+                msg.reply_text("Turned off reporting! You wont get any reports.")
         else:
             msg.reply_text(
                 "Your current report preference is: `{}`".format(
@@ -81,9 +79,7 @@ def report(update, context) -> str:
     user = update.effective_user  # type: Optional[User]
 
     if chat and message.reply_to_message and sql.chat_should_report(chat.id):
-        reported_user = (
-            message.reply_to_message.from_user
-        )  # type: Optional[User]
+        reported_user = message.reply_to_message.from_user  # type: Optional[User]
         chat_name = chat.title or chat.first or chat.username
         admin_list = chat.get_administrators()
         messages = update.effective_message
@@ -172,9 +168,7 @@ def report(update, context) -> str:
                             "Exception while reporting user " + excp.message
                         )
 
-        message.reply_to_message.reply_text(
-            reported, parse_mode=ParseMode.HTML
-        )
+        message.reply_to_message.reply_text(reported, parse_mode=ParseMode.HTML)
         return msg
 
     return ""
@@ -259,12 +253,10 @@ You MUST reply to a message to report a user; you can't just use @admin to tag a
 Note that the report commands do not work when admins use them; or when used to report an admin. Bot assumes that \
 admins don't need to report, or be reported!
 """
-REPORT_HANDLER = CommandHandler("report", report, filters=Filters.group)
+REPORT_HANDLER = CommandHandler("report", report, filters=Filters.chat_type.groups)
 SETTING_HANDLER = CommandHandler("reports", report_setting, pass_args=True)
 ADMIN_REPORT_HANDLER = MessageHandler(Filters.regex("(?i)@admin(s)?"), report)
-REPORT_BUTTON_HANDLER = CallbackQueryHandler(
-    report_buttons, pattern=r"report_"
-)
+REPORT_BUTTON_HANDLER = CallbackQueryHandler(report_buttons, pattern=r"report_")
 
 dispatcher.add_handler(REPORT_HANDLER, REPORT_GROUP)
 dispatcher.add_handler(ADMIN_REPORT_HANDLER, REPORT_GROUP)

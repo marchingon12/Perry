@@ -85,6 +85,7 @@ if ENV:
     TELETHON_ID = int(os.environ.get("TL_APP_ID", None))
     TELETHON_HASH = os.environ.get("TL_HASH", None)
     SPAMWATCH = os.environ.get("SPAMWATCH_API", None)
+    CLEAN_UPDATE = os.environ.get("CLEAN_UPDATE", None)
 
 else:
     from perry.config import Development as Config
@@ -141,6 +142,7 @@ else:
     TELETHON_HASH = Config.TELETHON_HASH
     TELETHON_ID = Config.TELETHON_ID
     SPAMWATCH = Config.SPAMWATCH_API
+    CLEAN_UPDATE = Config.CLEAN_UPDATE
 
 SUDO_USERS.add(OWNER_ID)
 

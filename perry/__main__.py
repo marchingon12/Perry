@@ -28,6 +28,7 @@ from perry import (
     LOGGER,
     BLACKLIST_CHATS,
     WHITELIST_CHATS,
+    CLEAN_UPDATE,
 )
 
 # needed to dynamically load modules
@@ -560,7 +561,7 @@ def main():
     )
 
     migrate_handler = MessageHandler(Filters.status_update.migrate, migrate_chats)
-    is_chat_allowed_handler = MessageHandler(Filters.group, is_chat_allowed)
+    is_chat_allowed_handler = MessageHandler(Filters.chat_type.groups, is_chat_allowed)
 
     # dispatcher.add_handler(test_handler)
     dispatcher.add_handler(start_handler)
@@ -586,7 +587,7 @@ def main():
 
     else:
         LOGGER.info("Using long polling.")
-        updater.start_polling(timeout=15, read_latency=4)
+        updater.start_polling(timeout=15, read_latency=4, clean=CLEAN_UPDATE)
         client.run_until_disconnected()
 
     updater.idle()

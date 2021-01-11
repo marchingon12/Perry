@@ -37,9 +37,7 @@ def send_rules(update, chat_id, from_pm=False):
             raise
 
     rules = sql.get_rules(chat_id)
-    text = "The rules for *{}* are:\n\n{}".format(
-        escape_markdown(chat.title), rules
-    )
+    text = "The rules for *{}* are:\n\n{}".format(escape_markdown(chat.title), rules)
 
     if from_pm and rules:
         bot.send_message(user.id, text, parse_mode=ParseMode.MARKDOWN)
@@ -57,9 +55,7 @@ def send_rules(update, chat_id, from_pm=False):
                     [
                         InlineKeyboardButton(
                             text="Rules",
-                            url="t.me/{}?start={}".format(
-                                bot.username, chat_id
-                            ),
+                            url="t.me/{}?start={}".format(bot.username, chat_id),
                         )
                     ]
                 ]
@@ -78,22 +74,16 @@ def set_rules(update, context):
     chat_id = update.effective_chat.id
     msg = update.effective_message  # type: Optional[Message]
     raw_text = msg.text
-    args = raw_text.split(
-        None, 1
-    )  # use python's maxsplit to separate cmd and args
+    args = raw_text.split(None, 1)  # use python's maxsplit to separate cmd and args
     if len(args) == 2:
         txt = args[1]
-        offset = len(txt) - len(
-            raw_text
-        )  # set correct offset relative to command
+        offset = len(txt) - len(raw_text)  # set correct offset relative to command
         markdown_rules = markdown_parser(
             txt, entities=msg.parse_entities(), offset=offset
         )
 
         sql.set_rules(chat_id, markdown_rules)
-        update.effective_message.reply_text(
-            "Successfully set rules for this group."
-        )
+        update.effective_message.reply_text("Successfully set rules for this group.")
 
 
 @user_admin
@@ -119,9 +109,7 @@ def __migrate__(old_chat_id, new_chat_id):
 
 
 def __chat_settings__(chat_id, user_id):
-    return "This chat has had it's rules set: `{}`".format(
-        bool(sql.get_rules(chat_id))
-    )
+    return "This chat has had it's rules set: `{}`".format(bool(sql.get_rules(chat_id)))
 
 
 __help__ = """
@@ -136,12 +124,12 @@ Every chat works with different rules; this module will help make those rules cl
 
 __mod_name__ = "Rules"
 
-GET_RULES_HANDLER = CommandHandler("rules", get_rules, filters=Filters.group)
+GET_RULES_HANDLER = CommandHandler("rules", get_rules, filters=Filters.chat_type.groups)
 SET_RULES_HANDLER = CommandHandler(
-    "setrules", set_rules, filters=Filters.group
+    "setrules", set_rules, filters=Filters.chat_type.groups
 )
 RESET_RULES_HANDLER = CommandHandler(
-    "clearrules", clear_rules, filters=Filters.group
+    "clearrules", clear_rules, filters=Filters.chat_type.groups
 )
 
 dispatcher.add_handler(GET_RULES_HANDLER)

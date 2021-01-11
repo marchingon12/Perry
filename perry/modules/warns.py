@@ -42,9 +42,7 @@ from perry.modules.log_channel import loggable
 from perry.modules.sql import warns_sql as sql
 
 WARN_HANDLER_GROUP = 9
-CURRENT_WARNING_FILTER_STRING = (
-    "<b>Current warning filters in this chat:</b>\n"
-)
+CURRENT_WARNING_FILTER_STRING = "<b>Current warning filters in this chat:</b>\n"
 
 
 # Not async
@@ -134,9 +132,7 @@ def warn(
         )
 
     try:
-        message.reply_text(
-            reply, reply_markup=keyboard, parse_mode=ParseMode.HTML
-        )
+        message.reply_text(reply, reply_markup=keyboard, parse_mode=ParseMode.HTML)
     except BadRequest as excp:
         if excp.message == "Reply message not found":
             # Do not reply
@@ -177,9 +173,7 @@ def button(update, context):
                 "\n<b>User:</b> {} (<code>{}</code>)".format(
                     html.escape(chat.title),
                     mention_html(user.id, user.first_name),
-                    mention_html(
-                        user_member.user.id, user_member.user.first_name
-                    ),
+                    mention_html(user_member.user.id, user_member.user.first_name),
                     user_member.user.id,
                 )
             )
@@ -215,9 +209,7 @@ def warn_user(update, context):
                 warner,
             )
         else:
-            return warn(
-                chat.get_member(user_id).user, chat, reason, message, warner
-            )
+            return warn(chat.get_member(user_id).user, chat, reason, message, warner)
     else:
         message.reply_text("No user was designated!")
     return ""
@@ -316,9 +308,7 @@ def warns(update, context):
                 )
             )
     else:
-        update.effective_message.reply_text(
-            "This user hasn't got any warnings!"
-        )
+        update.effective_message.reply_text("This user hasn't got any warnings!")
 
 
 # Dispatcher handler stop - do not async
@@ -351,9 +341,7 @@ def add_warn_filter(update, context):
 
     sql.add_warn_filter(chat.id, keyword, content)
 
-    update.effective_message.reply_text(
-        "Warn filter added for '{}'!".format(keyword)
-    )
+    update.effective_message.reply_text("Warn filter added for '{}'!".format(keyword))
     raise DispatcherHandlerStop
 
 
@@ -398,26 +386,20 @@ def list_warn_filters(update, context):
     all_handlers = sql.get_chat_warn_triggers(chat.id)
 
     if not all_handlers:
-        update.effective_message.reply_text(
-            "No warning filters are active here!"
-        )
+        update.effective_message.reply_text("No warning filters are active here!")
         return
 
     filter_list = CURRENT_WARNING_FILTER_STRING
     for keyword in all_handlers:
         entry = " - {}\n".format(html.escape(keyword))
         if len(entry) + len(filter_list) > telegram.MAX_MESSAGE_LENGTH:
-            update.effective_message.reply_text(
-                filter_list, parse_mode=ParseMode.HTML
-            )
+            update.effective_message.reply_text(filter_list, parse_mode=ParseMode.HTML)
             filter_list = entry
         else:
             filter_list += entry
 
     if not filter_list == CURRENT_WARNING_FILTER_STRING:
-        update.effective_message.reply_text(
-            filter_list, parse_mode=ParseMode.HTML
-        )
+        update.effective_message.reply_text(filter_list, parse_mode=ParseMode.HTML)
 
 
 @loggable
@@ -583,43 +565,43 @@ be a sentence, encompass it with quotes, as such: `/addwarn "very angry" This is
 __mod_name__ = "Warnings"
 
 WARN_HANDLER = CommandHandler(
-    "warn", warn_user, pass_args=True, filters=Filters.group
+    "warn", warn_user, pass_args=True, filters=Filters.chat_type.groups
 )
 RESET_WARN_HANDLER = CommandHandler(
     ["resetwarn", "resetwarns"],
     reset_warns,
     pass_args=True,
-    filters=Filters.group,
+    filters=Filters.chat_type.groups,
 )
 REMOVE_WARNS_HANDLER = CommandHandler(
-    ["rmwarn", "unwarn"], remove_warns, pass_args=True, filters=Filters.group
+    ["rmwarn", "unwarn"], remove_warns, pass_args=True, filters=Filters.chat_type.groups
 )
 CALLBACK_QUERY_HANDLER = CallbackQueryHandler(
     button, pattern=r"rm_warn", run_async=True
 )
 MYWARNS_HANDLER = DisableAbleCommandHandler(
-    "warns", warns, pass_args=True, filters=Filters.group
+    "warns", warns, pass_args=True, filters=Filters.chat_type.groups
 )
 ADD_WARN_HANDLER = CommandHandler(
-    "addwarn", add_warn_filter, filters=Filters.group
+    "addwarn", add_warn_filter, filters=Filters.chat_type.groups
 )
 RM_WARN_HANDLER = CommandHandler(
-    ["nowarn", "stopwarn"], remove_warn_filter, filters=Filters.group
+    ["nowarn", "stopwarn"], remove_warn_filter, filters=Filters.chat_type.groups
 )
 LIST_WARN_HANDLER = DisableAbleCommandHandler(
     ["warnlist", "warnfilters"],
     list_warn_filters,
-    filters=Filters.group,
+    filters=Filters.chat_type.groups,
     admin_ok=True,
 )
 WARN_FILTER_HANDLER = MessageHandler(
-    CustomFilters.has_text & Filters.group, reply_filter
+    CustomFilters.has_text & Filters.chat_type.groups, reply_filter
 )
 WARN_LIMIT_HANDLER = CommandHandler(
-    "warnlimit", set_warn_limit, pass_args=True, filters=Filters.group
+    "warnlimit", set_warn_limit, pass_args=True, filters=Filters.chat_type.groups
 )
 WARN_STRENGTH_HANDLER = CommandHandler(
-    "strongwarn", set_warn_strength, pass_args=True, filters=Filters.group
+    "strongwarn", set_warn_strength, pass_args=True, filters=Filters.chat_type.groups
 )
 
 dispatcher.add_handler(WARN_HANDLER)

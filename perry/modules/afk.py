@@ -30,9 +30,7 @@ def afk(update, context):
 
     sql.set_afk(update.effective_user.id, reason)
     afkstr = random.choice(fun.AFK)
-    update.effective_message.reply_text(
-        afkstr.format(update.effective_user.first_name)
-    )
+    update.effective_message.reply_text(afkstr.format(update.effective_user.first_name))
 
 
 def no_longer_afk(update, context):
@@ -122,9 +120,10 @@ AFK_REGEX_HANDLER = DisableAbleMessageHandler(
     Filters.regex("(?i)brb"), afk, friendly="afk"
 )
 NO_AFK_HANDLER = MessageHandler(
-    Filters.all & Filters.group & ~Filters.update.edited_message, no_longer_afk
+    Filters.all & Filters.chat_type.groups & ~Filters.update.edited_message,
+    no_longer_afk,
 )
-AFK_REPLY_HANDLER = MessageHandler(Filters.all & Filters.group, reply_afk)
+AFK_REPLY_HANDLER = MessageHandler(Filters.all & Filters.chat_type.groups, reply_afk)
 # AFK_REPLY_HANDLER = MessageHandler(Filters.entity(MessageEntity.MENTION) | Filters.entity(MessageEntity.TEXT_MENTION),
 #                                   reply_afk)
 

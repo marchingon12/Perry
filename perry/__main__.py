@@ -3,6 +3,7 @@ import traceback
 import html
 import json
 import re
+import requests
 from typing import Optional, List
 
 from telegram import Message, Chat, User
@@ -14,7 +15,7 @@ from telegram.ext import (
     CallbackQueryHandler,
 )
 from telegram.ext.dispatcher import DispatcherHandlerStop
-from telegram.utils.helpers import escape_markdown
+from telegram.utils.helpers import escape_markdown, mention_html
 
 from perry import (
     dispatcher,
@@ -186,30 +187,59 @@ def start(update, context):
 
 def error_handler(update, context):
     """Log the error and send a telegram message to notify the developer."""
-    # Log the error before we do anything else, so we can see it even if something breaks.
-    LOGGER.error(msg="Exception while handling an update:", exc_info=context.error)
+    LOGGER.error(
+        msg="Exception while handling an update:", exc_info=context.error
+    )
 
     # traceback.format_exception returns the usual python message about an exception, but as a
     # list of strings rather than a single string, so we have to join them together.
     tb_list = traceback.format_exception(
         None, context.error, context.error.__traceback__
     )
-    tb = "".join(tb_list)
+    trace = "".join(tb_list)
 
-    # Build the message with some markup and additional information about what happened.
-    message = (
-        "An exception was raised while handling an update\n"
-        "<pre>update = {}</pre>\n\n"
-        "<pre>{}</pre>"
-    ).format(
-        html.escape(json.dumps(update.to_dict(), indent=2, ensure_ascii=False)),
-        html.escape(tb),
+    # lets try to get as much information from the telegram update as possible
+    payload = ""
+    # normally, we always have an user. If not, its either a channel or a poll update.
+    if update.effective_user:
+        payload += f" with the user {mention_html(update.effective_user.id, update.effective_user.first_name)}"
+    # there are more situations when you don't get a chat
+    if update.effective_chat:
+        payload += f" within the chat <i>{update.effective_chat.title}</i>"
+        if update.effective_chat.username:
+            payload += f" (@{update.effective_chat.username})"
+    # but only one where you have an empty payload by now: A poll (buuuh)
+    if update.poll:
+        payload += f" with the poll id {update.poll.id}."
+    # lets put this in a "well" formatted text
+    text = f"Hey.\nThe error <code>{context.error}</code> happened{payload}"
+
+    # now paste the error (trace) in nekobin and make buttons
+    # with url of log, as log in telegram message is hardly readable..
+    key = (
+        requests.post(
+            "https://nekobin.com/api/documents",
+            json={
+                "content": f"{trace}\n\n{json.dumps(update.to_dict(), indent=2, ensure_ascii=False)}"
+            },
+        )
+        .json()
+        .get("result")
+        .get("key")
     )
 
-    if len(message) >= 4096:
-        message = message[:4096]
-    # Finally, send the message
-    context.bot.send_message(chat_id=OWNER_ID, text=message, parse_mode=ParseMode.HTML)
+    markup = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    text="Full traceback & update",
+                    url=f"https://nekobin.com/{key}.py",
+                )
+            ]
+        ]
+    )
+    context.bot.send_message(OWNER_ID, text, reply_markup=markup, parse_mode="html")
+
 
 
 def help_button(update, context):

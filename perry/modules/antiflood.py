@@ -15,7 +15,6 @@ from telegram import (
 )
 
 from perry import WHITELIST_USERS, dispatcher
-from perry.modules.sql.approve_sql import is_approved
 from perry.modules.helper_funcs.chat_status import (
     bot_admin,
     can_restrict,
@@ -60,17 +59,9 @@ def check_flood(update, context) -> str:
         return ""
 
     # ignore admins and whitelists
-    if (
-        is_user_admin(chat, user.id)
-        or user.id in WHITELIST_USERS
-        or user.id in SARDEGNA_USERS
-    ):
+    if is_user_admin(chat, user.id) or user.id in WHITELIST_USERS:
         sql.update_flood(chat.id, None)
         return ""
-    # ignore approved users
-    if is_approved(chat.id, user.id):
-        sql.update_flood(chat.id, None)
-        return
 
     should_ban = sql.update_flood(chat.id, user.id)
     if not should_ban:

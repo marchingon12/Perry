@@ -432,9 +432,7 @@ SET_FLOOD_MODE_HANDLER = CommandHandler(
 FLOOD_QUERY_HANDLER = CallbackQueryHandler(
     flood_button, pattern=r"unmute_flooder", run_async=True
 )
-FLOOD_HANDLER = CommandHandler(
-    "flood", flood, filters=Filters.chat_type.groups, run_async=True
-)
+FLOOD_HANDLER = CommandHandler("flood", flood, run_async=True)
 
 dispatcher.add_handler(FLOOD_BAN_HANDLER, FLOOD_GROUP)
 dispatcher.add_handler(FLOOD_QUERY_HANDLER)

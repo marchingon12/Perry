@@ -125,9 +125,7 @@ def whitelist_plus(func):
         if user and is_whitelist_plus(chat, user.id):
             return func(update, context, *args, **kwargs)
         else:
-            update.effective_message.reply_text(
-                f"You don't have access to use this.\nVisit @YorkTownEagleUnion"
-            )
+            update.effective_message.reply_text(f"You don't have access to use this.\n")
 
     return is_whitelist_plus_func
 
@@ -294,9 +292,7 @@ def can_restrict(func):
 
         if chat.get_member(bot.id).can_restrict_members:
             return func(update, context, *args, **kwargs)
-        update.effective_message.reply_text(
-            cant_restrict, parse_mode=ParseMode.HTML
-        )
+        update.effective_message.reply_text(cant_restrict, parse_mode=ParseMode.HTML)
 
     return restrict_rights
 

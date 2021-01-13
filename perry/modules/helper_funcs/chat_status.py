@@ -198,7 +198,7 @@ def bot_admin(func):
         else:
             not_admin = f"I'm not admin in <b>{update_chat_title}</b>!"
 
-        if is_bot_admin(chat, bot.id):
+        if is_bot_admin(chat, context.bot.id):
             return func(update, context, *args, **kwargs)
         else:
             update.effective_message.reply_text(not_admin, parse_mode=ParseMode.HTML)
@@ -218,7 +218,7 @@ def bot_can_delete(func):
         else:
             cant_delete = f"I can't delete messages in <b>{update_chat_title}</b>!\nMake sure I'm admin and can delete other user's messages there."
 
-        if can_delete(chat, bot.id):
+        if can_delete(chat, context.bot.id):
             return func(update, context, *args, **kwargs)
         update.effective_message.reply_text(cant_delete, parse_mode=ParseMode.HTML)
 
@@ -239,7 +239,7 @@ def can_pin(func):
         else:
             cant_pin = f"I can't pin messages in <b>{update_chat_title}</b>!\nMake sure I'm admin and can pin messages there."
 
-        if chat.get_member(bot.id).can_pin_messages:
+        if chat.get_member(context.bot.id).can_pin_messages:
             return func(update, context, *args, **kwargs)
         update.effective_message.reply_text(cant_pin, parse_mode=ParseMode.HTML)
 
@@ -261,7 +261,7 @@ def can_promote(func):
                 f"Make sure I'm admin there and can appoint new admins."
             )
 
-        if chat.get_member(bot.id).can_promote_members:
+        if chat.get_member(context.bot.id).can_promote_members:
             return func(update, context, *args, **kwargs)
         update.effective_message.reply_text(cant_promote, parse_mode=ParseMode.HTML)
 
@@ -280,7 +280,7 @@ def can_restrict(func):
         else:
             cant_restrict = f"I can't restrict people in <b>{update_chat_title}</b>!\nMake sure I'm admin there and can restrict users."
 
-        if chat.get_member(bot.id).can_restrict_members:
+        if chat.get_member(context.bot.id).can_restrict_members:
             return func(update, context, *args, **kwargs)
         update.effective_message.reply_text(cant_restrict, parse_mode=ParseMode.HTML)
 

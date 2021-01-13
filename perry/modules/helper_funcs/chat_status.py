@@ -92,7 +92,6 @@ def is_user_in_chat(chat: Chat, user_id: int) -> bool:
 def sudo_plus(func):
     @wraps(func)
     def is_sudo_plus_func(update: Update, context: CallbackContext, *args, **kwargs):
-        bot = context.bot
         user = update.effective_user
         chat = update.effective_chat
 
@@ -118,7 +117,6 @@ def whitelist_plus(func):
     def is_whitelist_plus_func(
         update: Update, context: CallbackContext, *args, **kwargs
     ):
-        bot = context.bot
         user = update.effective_user
         chat = update.effective_chat
 
@@ -133,7 +131,6 @@ def whitelist_plus(func):
 def user_admin(func):
     @wraps(func)
     def is_admin(update: Update, context: CallbackContext, *args, **kwargs):
-        bot = context.bot
         user = update.effective_user
         chat = update.effective_chat
 
@@ -159,7 +156,6 @@ def user_admin_no_reply(func):
     def is_not_admin_no_reply(
         update: Update, context: CallbackContext, *args, **kwargs
     ):
-        bot = context.bot
         user = update.effective_user
         chat = update.effective_chat
 
@@ -179,7 +175,6 @@ def user_admin_no_reply(func):
 def user_not_admin(func):
     @wraps(func)
     def is_not_admin(update: Update, context: CallbackContext, *args, **kwargs):
-        bot = context.bot
         user = update.effective_user
         chat = update.effective_chat
 
@@ -194,15 +189,14 @@ def user_not_admin(func):
 def bot_admin(func):
     @wraps(func)
     def is_admin(update: Update, context: CallbackContext, *args, **kwargs):
-        bot = context.bot
         chat = update.effective_chat
         update_chat_title = chat.title
         message_chat_title = update.effective_message.chat.title
 
         if update_chat_title == message_chat_title:
-            not_admin = "I'm not admin! - REEEEEE"
+            not_admin = "I'm not an admin!"
         else:
-            not_admin = f"I'm not admin in <b>{update_chat_title}</b>! - REEEEEE"
+            not_admin = f"I'm not admin in <b>{update_chat_title}</b>!"
 
         if is_bot_admin(chat, bot.id):
             return func(update, context, *args, **kwargs)
@@ -215,7 +209,6 @@ def bot_admin(func):
 def bot_can_delete(func):
     @wraps(func)
     def delete_rights(update: Update, context: CallbackContext, *args, **kwargs):
-        bot = context.bot
         chat = update.effective_chat
         update_chat_title = chat.title
         message_chat_title = update.effective_message.chat.title
@@ -235,7 +228,6 @@ def bot_can_delete(func):
 def can_pin(func):
     @wraps(func)
     def pin_rights(update: Update, context: CallbackContext, *args, **kwargs):
-        bot = context.bot
         chat = update.effective_chat
         update_chat_title = chat.title
         message_chat_title = update.effective_message.chat.title
@@ -257,7 +249,6 @@ def can_pin(func):
 def can_promote(func):
     @wraps(func)
     def promote_rights(update: Update, context: CallbackContext, *args, **kwargs):
-        bot = context.bot
         chat = update.effective_chat
         update_chat_title = chat.title
         message_chat_title = update.effective_message.chat.title
@@ -280,7 +271,6 @@ def can_promote(func):
 def can_restrict(func):
     @wraps(func)
     def restrict_rights(update: Update, context: CallbackContext, *args, **kwargs):
-        bot = context.bot
         chat = update.effective_chat
         update_chat_title = chat.title
         message_chat_title = update.effective_message.chat.title
@@ -300,7 +290,6 @@ def can_restrict(func):
 def user_can_ban(func):
     @wraps(func)
     def user_is_banhammer(update: Update, context: CallbackContext, *args, **kwargs):
-        bot = context.bot
         user = update.effective_user.id
         member = update.effective_chat.get_member(user)
 

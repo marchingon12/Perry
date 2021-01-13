@@ -6,13 +6,8 @@ from telegram import (
     Message,
     Chat,
     Update,
-    Bot,
     User,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    ParseMode,
-    ChatPermissions,
-)
+    ChatPermissions)
 
 from perry import WHITELIST_USERS, dispatcher
 from perry.modules.helper_funcs.chat_status import (
@@ -33,16 +28,8 @@ from telegram.ext import (
     CallbackQueryHandler,
     CallbackContext,
 )
-from telegram.utils.helpers import mention_html, escape_markdown
-from perry import dispatcher
-from perry.modules.helper_funcs.chat_status import (
-    is_user_admin,
-    user_admin,
-    can_restrict,
-)
+from telegram.utils.helpers import mention_html
 from perry.modules.helper_funcs.string_handling import extract_time
-from perry.modules.log_channel import loggable
-from perry.modules.sql import antiflood_sql as sql
 from perry.modules.connection import connected
 from perry.modules.helper_funcs.alternate import send_message
 

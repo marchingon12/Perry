@@ -429,7 +429,12 @@ def pyeval(update, context):
     in runtime. (`OWNER_ID`) only!
     """
     msg = update.effective_message
-    code = msg.text.split(None, 1)[1]
+    args = context.args
+
+    if len(args) <= 0:
+        return msg.reply_text("Please enter python code after /exec!")
+    else:
+        code = msg.text.split(None, 1)[1]
 
     command = "".join(f"\n {x}" for x in code.split("\n.strip()"))
 
@@ -461,7 +466,6 @@ def pyeval(update, context):
         except Exception as excp:
             if str(excp.message) == "Message must be non-empty":
                 return msg.reply_text("None")
-
             msg.reply_text(str(excp.message))
 
 
@@ -604,6 +608,78 @@ def repo(update, context):
         message.reply_text("Enter someone's GitHub username to view their repos!")
 
 
+@typing_action
+def nekobin(update, context):
+    message = update.effective_message
+    extension, text = update.effective_message.text.split(None, 2)[1:]
+    if "c" or "py" or "java" not in extension:
+        extension = "txt"
+        message.reply_text(
+            "You have not specified a file extension. Default: <b>.txt</b>",
+            parse_mode=ParseMode.HTML,
+        )
+        if len(text) >= 1:
+            key = (
+                r.post(
+                    "https://nekobin.com/api/documents",
+                    json={"content": f"{text}\n"},
+                )
+                .json()
+                .get("result")
+                .get("key")
+            )
+
+            dispatcher.bot.send_message(
+                message.chat.id,
+                text="<b>Nekofied: </b>",
+                parse_mode=ParseMode.HTML,
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                text="View on nekobin",
+                                url=f"https://nekobin.com/{key}.{extension}",
+                            ),
+                        ]
+                    ]
+                ),
+            )
+        else:
+            message.reply_text(
+                "You have two options: \n1. Reply to a file or text to nekofy it!\n 2. Send command with text and specify file extension."
+            )
+    else:
+        if len(text) >= 1:
+            key = (
+                r.post(
+                    "https://nekobin.com/api/documents",
+                    json={"content": f"{text}\n"},
+                )
+                .json()
+                .get("result")
+                .get("key")
+            )
+
+            message.reply_text(
+                "<b>Nekofied: </b>",
+                parse_mode=ParseMode.HTML,
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                text="View on nekobin",
+                                url=f"https://nekobin.com/{key}.{extension}",
+                            ),
+                        ]
+                    ]
+                ),
+            )
+        else:
+            message.reply_text(
+                "You have two options: \n1. Reply to a file or text to nekofy it!\n 2. Send command with text and specify file extension."
+            )
+
+
 # /exec: Enables the OWNER and SUDO_USERS to execute python code using the bot.
 # /shell: Enables the OWNER to run bash commands within the server using the bot.
 # /echo: For SUDO_USERS, Perry will write and replace your message.
@@ -650,8 +726,7 @@ PYEVAL_HANDLER = CommandHandler(
 GITHUB_HANDLER = CommandHandler("gitstats", github, pass_args=True, run_async=True)
 REPO_HANDLER = CommandHandler("repo", repo, pass_args=True, run_async=True)
 DICT_HANDLER = CommandHandler("dict", dictionary, pass_args=True, run_async=True)
-
-
+NEKOFY_HANDLER = CommandHandler("nekofy", nekobin, pass_args=True, run_async=True)
 dispatcher.add_handler(UD_HANDLER)
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(INFO_HANDLER)
@@ -668,3 +743,4 @@ dispatcher.add_handler(PYEVAL_HANDLER)
 dispatcher.add_handler(GITHUB_HANDLER)
 dispatcher.add_handler(REPO_HANDLER)
 dispatcher.add_handler(DICT_HANDLER)
+dispatcher.add_handler(NEKOFY_HANDLER)

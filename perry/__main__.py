@@ -181,15 +181,13 @@ def start(update, context):
             )
     else:
         update.effective_message.reply_text(
-            "Sending you a warm hi & wishing your day is a happy one!"
+            "Hi there! I'm alive and well, hope you are too!"
         )
 
 
 def error_handler(update, context):
     """Log the error and send a telegram message to notify the developer."""
-    LOGGER.error(
-        msg="Exception while handling an update:", exc_info=context.error
-    )
+    LOGGER.error(msg="Error found, check dump below:", exc_info=context.error)
 
     # traceback.format_exception returns the usual python message about an exception, but as a
     # list of strings rather than a single string, so we have to join them together.
@@ -200,19 +198,20 @@ def error_handler(update, context):
 
     # lets try to get as much information from the telegram update as possible
     payload = ""
-    # normally, we always have an user. If not, its either a channel or a poll update.
+    # normally, we always have a user. If not, its either a channel or a poll update.
     if update.effective_user:
-        payload += f" with the user {mention_html(update.effective_user.id, update.effective_user.first_name)}"
+        payload += f" \n<b>- User</b>: {mention_html(update.effective_user.id, update.effective_user.first_name)}"
     # there are more situations when you don't get a chat
     if update.effective_chat:
-        payload += f" within the chat <i>{update.effective_chat.title}</i>"
-        if update.effective_chat.username:
-            payload += f" (@{update.effective_chat.username})"
+        if update.effective_chat.title == None:
+            payload += f" \n<b>- Chat</b>: <i>Bot PM</i>"
+        else:
+            payload += f" \n<b>- Chat</b>: <i>{update.effective_chat.title}</i>"
     # but only one where you have an empty payload by now: A poll (buuuh)
     if update.poll:
-        payload += f" with the poll id {update.poll.id}."
+        payload += f" \n<b>- Poll id</b>: {update.poll.id}."
     # lets put this in a "well" formatted text
-    text = f"Hey.\nThe error <code>{context.error}</code> happened{payload}"
+    text = f"<b>Error found while handling an update!</b>\n<b>- Error message</b>:\n<code>{context.error}</code> {payload}"
 
     # now paste the error (trace) in nekobin and make buttons
     # with url of log, as log in telegram message is hardly readable..
@@ -232,14 +231,17 @@ def error_handler(update, context):
         [
             [
                 InlineKeyboardButton(
-                    text="Full traceback & update",
+                    text="Full traceback on nekobin",
                     url=f"https://nekobin.com/{key}.py",
-                )
+                ),
+                # InlineKeyboardButton(
+                #     text="Send traceback as message",
+                #     ,
+                # ),
             ]
         ]
     )
     context.bot.send_message(OWNER_ID, text, reply_markup=markup, parse_mode="html")
-
 
 
 def help_button(update, context):

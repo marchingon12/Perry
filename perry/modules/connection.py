@@ -136,7 +136,7 @@ def connect_chat(update, context):
                     chat_name = conn_chat.title
                     send_message(
                         update.effective_message,
-                        "Successfully connected to *{}*. \nUse /helpconnect to check available commands.".format(
+                        "Successfully connected to *{}*. \nUse /connect again to show options and /helpconnect for info on available actions.".format(
                             chat_name
                         ),
                         parse_mode=ParseMode.MARKDOWN,
@@ -154,7 +154,7 @@ def connect_chat(update, context):
             if gethistory:
                 buttons = [
                     InlineKeyboardButton(
-                        text="❎ Close button", callback_data="connect_close"
+                        text="❎ Close menu", callback_data="connect_close"
                     ),
                     InlineKeyboardButton(
                         text="🧹 Clear history", callback_data="connect_clear"

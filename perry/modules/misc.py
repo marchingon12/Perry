@@ -70,7 +70,9 @@ def get_id(update, context):
         else:
             user = context.bot.get_chat(user_id)
             update.effective_message.reply_text(
-                "{}'s id is `{}`.".format(escape_markdown(user.first_name), user.id),
+                "{}'s id is `{}`.".format(
+                    escape_markdown(user.first_name), user.id
+                ),
                 parse_mode=ParseMode.MARKDOWN,
             )
     else:
@@ -263,7 +265,9 @@ Keep in mind that your message <b>MUST</b> contain some text other than just a b
 
 @typing_action
 def markdown_help(update, context):
-    update.effective_message.reply_text(MARKDOWN_HELP, parse_mode=ParseMode.HTML)
+    update.effective_message.reply_text(
+        MARKDOWN_HELP, parse_mode=ParseMode.HTML
+    )
     update.effective_message.reply_text(
         "Try forwarding the following message to me, and you'll see!"
     )
@@ -318,16 +322,16 @@ def ud(update, context):
         msg.reply_text("Please enter keywords to search!")
         return
     try:
-        results = get(f"http://api.urbandictionary.com/v0/define?term={text}").json()
+        results = get(
+            f"http://api.urbandictionary.com/v0/define?term={text}"
+        ).json()
         reply_text = (
             f"Word: {text}\n\n"
             f'Definition:\n{results["list"][0]["definition"]}\n\n'
             f'Example:\n{results["list"][0]["example"]}\n\n'
         )
     except IndexError:
-        reply_text = (
-            f"Word: {text}\nResults: Sorry could not find any matching results!"
-        )
+        reply_text = f"Word: {text}\nResults: Sorry could not find any matching results!"
     ignore_chars = "[]"
     reply = reply_text
     for chars in ignore_chars:
@@ -342,21 +346,34 @@ def ud(update, context):
 
 @typing_action
 def dictionary(update, context):
+
     msg = update.effective_message
-    lang, text = update.effective_message.text.split(None, 2)[1:]
+    args = msg.text.split(None, 2)[1:]
+    # make en as default if lang not specified
+    if len(args) == 1:
+        lang = "en"
+        text = args[0]
+    else:
+        lang, text = args
+    # if query is not present
     if not text:
         msg.reply_text("Please enter keywords to search!")
         return
     try:
+        meanings = 0
+        definitions = 0
+
+        # if click on button "Next", partOfSpeech + 1, definitions + 1 ...
+
         results = get(
             f"https://api.dictionaryapi.dev/api/v2/entries/{lang}/{text}"
         ).json()
         synonyms = results[0]["meanings"][0]["definitions"][0]["synonyms"]
         reply_text = (
-            f'Word: {results[0]["word"]}\n\n'
-            f'× Type: {results[0]["meanings"][0]["partOfSpeech"]}\n\n'
-            f'× Meaning: {results[0]["meanings"][0]["definitions"][0]["definition"]}\n\n'
-            f'× Example: {results[0]["meanings"][0]["definitions"][0]["example"]}\n\n'
+            f'<b>Word</b>: {results[0]["word"]}\n'
+            f'<b>× Type</b>: {results[0]["meanings"][meanings]["partOfSpeech"]}\n'
+            f'<b>× Meaning</b>: {results[0]["meanings"][meanings]["definitions"][definitions]["definition"]}\n'
+            f'<b>× Example</b>: {results[0]["meanings"][meanings]["definitions"][definitions]["example"]}\n'
             # f"Synonyms:"
             # for synonyms in results[0]["meanings"][0]["definitions"]:
             #     length = len(synonyms)
@@ -365,15 +382,15 @@ def dictionary(update, context):
             #     else:
             #         print(synonyms)
             # if get({synonyms[0]}).json() == null:
-            f"× Synonyms: {synonyms[0]}, {synonyms[1]}, {synonyms[2]}\n"
+            f"<b>× Synonyms</b>: {synonyms[0]}, {synonyms[1]}, {synonyms[2]}\n"
             # for definition in results[0]["meanings"][0]["definitions"]:
             #     f'{[0]["definition"]}'
             #     f'{[0]["example"]}'
+            f"<i>\nLooking for a different part of speech?\nPress 'Next' to show next Type.</i>\n"
+            f"<i>Press 'Lang' to choose language. Default: English (en).</i>\n"
         )
     except IndexError:
-        reply_text = (
-            f"Word: {text}\nResults: Sorry, could not find any matching results!"
-        )
+        reply_text = f"Word: {text}\nResults: Sorry, could not find any matching results!"
     ignore_chars = "[]"
     reply = reply_text
     for chars in ignore_chars:
@@ -381,7 +398,23 @@ def dictionary(update, context):
     if len(reply) >= 4096:
         reply = reply[:4096]  # max msg lenth of tg.
     try:
-        msg.reply_text(reply)
+        msg.reply_text(
+            reply,
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        (
+                            InlineKeyboardButton(
+                                text="Next",
+                                url="google.com"
+                                # callback_data=next_meaning,
+                            )
+                        )
+                    ]
+                ]
+            ),
+        )
     except BadRequest as err:
         msg.reply_text(f"Error! {err.message}")
 
@@ -412,7 +445,9 @@ def getlink(update, context):
                 links += str(chat_id) + ":\n" + invitelink + "\n"
             else:
                 links += (
-                    str(chat_id) + ":\nI don't have access to the invite link." + "\n"
+                    str(chat_id)
+                    + ":\nI don't have access to the invite link."
+                    + "\n"
                 )
         except BadRequest as excp:
             links += str(chat_id) + ":\n" + excp.message + "\n"
@@ -486,7 +521,9 @@ def shell(update, context):
         )
         stdout, stderr = res.communicate()
         result = str(stdout.decode().strip()) + str(stderr.decode().strip())
-        rep.edit_text("<pre>" + escape(result) + "</pre>", parse_mode=ParseMode.HTML)
+        rep.edit_text(
+            "<code>" + escape(result) + "</code>", parse_mode=ParseMode.HTML
+        )
     except Exception as excp:
         if hasattr(excp, "message"):
             if str(excp.message) == "Message must be non-empty":
@@ -586,7 +623,9 @@ def github(update, context):
                 ),
             )
         else:
-            message.reply_text = "User not found. Make sure you entered valid username!"
+            message.reply_text = (
+                "User not found. Make sure you entered valid username!"
+            )
     else:
         message.reply_text("Enter the GitHub username you want stats for!")
 
@@ -602,82 +641,61 @@ def repo(update, context):
         for i in range(len(usr)):
             reply_text += f"[{usr[i]['name']}]({usr[i]['html_url']})\n"
         message.reply_text(
-            reply_text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True
+            reply_text,
+            parse_mode=ParseMode.MARKDOWN,
+            disable_web_page_preview=True,
         )
     else:
-        message.reply_text("Enter someone's GitHub username to view their repos!")
+        message.reply_text(
+            "Enter someone's GitHub username to view their repos!"
+        )
 
 
 @typing_action
 def nekobin(update, context):
     message = update.effective_message
-    extension, text = update.effective_message.text.split(None, 2)[1:]
-    if "c" or "py" or "java" not in extension:
+    args = message.text.split(None, 2)[1:]
+
+    if len(args) == 1:
         extension = "txt"
+        text = args[0]
         message.reply_text(
             "You have not specified a file extension. Default: <b>.txt</b>",
             parse_mode=ParseMode.HTML,
         )
-        if len(text) >= 1:
-            key = (
-                r.post(
-                    "https://nekobin.com/api/documents",
-                    json={"content": f"{text}\n"},
-                )
-                .json()
-                .get("result")
-                .get("key")
-            )
-
-            dispatcher.bot.send_message(
-                message.chat.id,
-                text="<b>Nekofied: </b>",
-                parse_mode=ParseMode.HTML,
-                reply_markup=InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
-                                text="View on nekobin",
-                                url=f"https://nekobin.com/{key}.{extension}",
-                            ),
-                        ]
-                    ]
-                ),
-            )
-        else:
-            message.reply_text(
-                "You have two options: \n1. Reply to a file or text to nekofy it!\n 2. Send command with text and specify file extension."
-            )
     else:
-        if len(text) >= 1:
-            key = (
-                r.post(
-                    "https://nekobin.com/api/documents",
-                    json={"content": f"{text}\n"},
-                )
-                .json()
-                .get("result")
-                .get("key")
-            )
+        extension, text = args
 
-            message.reply_text(
-                "<b>Nekofied: </b>",
-                parse_mode=ParseMode.HTML,
-                reply_markup=InlineKeyboardMarkup(
+    if len(text) >= 1:
+        key = (
+            r.post(
+                "https://nekobin.com/api/documents",
+                json={"content": f"{text}\n"},
+            )
+            .json()
+            .get("result")
+            .get("key")
+        )
+
+        dispatcher.bot.send_message(
+            message.chat.id,
+            text="<b>Nekofied: </b>",
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(
+                [
                     [
-                        [
-                            InlineKeyboardButton(
-                                text="View on nekobin",
-                                url=f"https://nekobin.com/{key}.{extension}",
-                            ),
-                        ]
+                        InlineKeyboardButton(
+                            text="View on nekobin",
+                            url=f"https://nekobin.com/{key}.{extension}",
+                        ),
                     ]
-                ),
-            )
-        else:
-            message.reply_text(
-                "You have two options: \n1. Reply to a file or text to nekofy it!\n 2. Send command with text and specify file extension."
-            )
+                ]
+            ),
+        )
+    else:
+        message.reply_text(
+            "You have two options: \n1. Reply to a file or text to nekofy it!\n 2. Send command with text and specify file extension."
+        )
 
 
 # /exec: Enables the OWNER and SUDO_USERS to execute python code using the bot.
@@ -694,6 +712,7 @@ An "odds and ends" module for small, simple commands which don't really fit anyw
  × /gitstats <username>: Get Github stats of a user.
  × /repo <username>: Displays a list of hyperlinked repos of a user on Github.
  × /wiki <query>: Search wikipedia articles.
+ × /dict <query>: Search for words you are unsure about with a dictionary. Supported languages are: en, de fr.
  × /ud <query> : Search stuffs in urban dictionary.
  × /reverse: Reverse searches image or stickers on google.
  × /gdpr: Deletes your information from the bot's database. Private chats only.
@@ -705,7 +724,9 @@ __mod_name__ = "Miscs"
 ID_HANDLER = DisableAbleCommandHandler("id", get_id, pass_args=True)
 INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
 ECHO_HANDLER = CommandHandler("echo", echo, filters=CustomFilters.sudo_filter)
-MD_HELP_HANDLER = CommandHandler("markdownhelp", markdown_help, filters=Filters.private)
+MD_HELP_HANDLER = CommandHandler(
+    "markdownhelp", markdown_help, filters=Filters.private
+)
 STATS_HANDLER = CommandHandler("stats", stats, filters=Filters.user(OWNER_ID))
 GDPR_HANDLER = CommandHandler("gdpr", gdpr, filters=Filters.private)
 WIKI_HANDLER = DisableAbleCommandHandler("wiki", wiki)
@@ -723,10 +744,16 @@ SHELL_HANDLER = CommandHandler(
 PYEVAL_HANDLER = CommandHandler(
     "exec", pyeval, filters=CustomFilters.sudo_filter, run_async=True
 )
-GITHUB_HANDLER = CommandHandler("gitstats", github, pass_args=True, run_async=True)
+GITHUB_HANDLER = CommandHandler(
+    "gitstats", github, pass_args=True, run_async=True
+)
 REPO_HANDLER = CommandHandler("repo", repo, pass_args=True, run_async=True)
-DICT_HANDLER = CommandHandler("dict", dictionary, pass_args=True, run_async=True)
-NEKOFY_HANDLER = CommandHandler("nekofy", nekobin, pass_args=True, run_async=True)
+DICT_HANDLER = CommandHandler(
+    "dict", dictionary, pass_args=True, run_async=True
+)
+NEKOFY_HANDLER = CommandHandler(
+    "nekofy", nekobin, pass_args=True, run_async=True
+)
 dispatcher.add_handler(UD_HANDLER)
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(INFO_HANDLER)

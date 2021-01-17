@@ -379,10 +379,11 @@ def dictionary(update, context):
     message_text = (
         f"*Word*: {text}\n"
         f'*× Type*: {curr_page.get("partOfSpeech") or "N/A"}\n'
-        f'*× Meaning*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
+        f'*× Definition*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
         f'*× Example*: {curr_page["definitions"][0].get("example") or "N/A"}\n'
-        f'*× Synonym*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}'
+        f'*× Synonym*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}\n'
     )
+    message_text += f"\n_Press 'Next' to view different parts of speech if available (noun, verb, adjective, etc.)._"
 
     msg.reply_text(
         message_text,
@@ -429,8 +430,8 @@ def dictionary_btn(update, context):
             f'*× Definition*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
             f'*× Example*: {curr_page["definitions"][0].get("example") or "N/A"}\n'
             f'*× Synonyms*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}\n'
-            f"**\nPress 'Next' to view different parts of speech if available (noun, verb, adjective, etc.).**"
         )
+        message_text += f"\n_Press 'Next' to view different parts of speech if available (noun, verb, adjective, etc.)._"
         query.edit_message_text(
             message_text,
             reply_markup=query.message.reply_markup,

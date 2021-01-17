@@ -26,7 +26,7 @@ from telegram import (
     TelegramError,
 )
 
-from telegram.ext import CommandHandler, Filters
+from telegram.ext import CommandHandler, CallbackQueryHandler, Filters
 from telegram.utils.helpers import escape_markdown, mention_html
 from telegram.error import BadRequest
 
@@ -45,6 +45,7 @@ from perry.modules.disable import DisableAbleCommandHandler
 from perry.modules.helper_funcs.extraction import extract_user
 from perry.modules.helper_funcs.filters import CustomFilters
 from perry.modules.helper_funcs.alternate import typing_action, send_action
+from perry.modules.helper_funcs.misc import HasNextWrapper
 
 
 @typing_action
@@ -348,75 +349,92 @@ def ud(update, context):
 def dictionary(update, context):
 
     msg = update.effective_message
-    args = msg.text.split(None, 2)[1:]
-    # make en as default if lang not specified
-    if len(args) == 1:
-        lang = "en"
-        text = args[0]
+    user = update.effective_user
+    user_data = context.user_data
+    inputlist = update.effective_message.text.split(None, 2)[1:]
+
+    # handle args
+    lang = "en"
+    if len(inputlist) == 0:
+        return msg.reply_text("Please enter keywords to search!")
+    elif len(inputlist) == 1:
+        text = inputlist[0]
     else:
-        lang, text = args
-    # if query is not present
-    if not text:
-        msg.reply_text("Please enter keywords to search!")
-        return
-    try:
-        meanings = 0
-        definitions = 0
+        lang, text = inputlist
 
-        # if click on button "Next", partOfSpeech + 1, definitions + 1 ...
+    resp = get(f"https://api.dictionaryapi.dev/api/v2/entries/{lang}/{text}")
+    if resp.status_code != 200:
+        return msg.reply_text("Sorry! could'nt find any results...")
+    results = resp.json()[0]["meanings"]
 
-        results = get(
-            f"https://api.dictionaryapi.dev/api/v2/entries/{lang}/{text}"
-        ).json()
-        synonyms = results[0]["meanings"][0]["definitions"][0]["synonyms"]
-        reply_text = (
-            f'<b>Word</b>: {results[0]["word"]}\n'
-            f'<b>× Type</b>: {results[0]["meanings"][meanings]["partOfSpeech"]}\n'
-            f'<b>× Meaning</b>: {results[0]["meanings"][meanings]["definitions"][definitions]["definition"]}\n'
-            f'<b>× Example</b>: {results[0]["meanings"][meanings]["definitions"][definitions]["example"]}\n'
-            # f"Synonyms:"
-            # for synonyms in results[0]["meanings"][0]["definitions"]:
-            #     length = len(synonyms)
-            #     if length == 0:
-            #         "No synonyms found!"
-            #     else:
-            #         print(synonyms)
-            # if get({synonyms[0]}).json() == null:
-            f"<b>× Synonyms</b>: {synonyms[0]}, {synonyms[1]}, {synonyms[2]}\n"
-            # for definition in results[0]["meanings"][0]["definitions"]:
-            #     f'{[0]["definition"]}'
-            #     f'{[0]["example"]}'
-            f"<i>\nLooking for a different part of speech?\nPress 'Next' to show next Type.</i>\n"
-            f"<i>Press 'Lang' to choose language. Default: English (en).</i>\n"
-        )
-    except IndexError:
-        reply_text = f"Word: {text}\nResults: Sorry, could not find any matching results!"
-    ignore_chars = "[]"
-    reply = reply_text
-    for chars in ignore_chars:
-        reply = reply.replace(chars, "")
-    if len(reply) >= 4096:
-        reply = reply[:4096]  # max msg lenth of tg.
-    try:
-        msg.reply_text(
-            reply,
-            parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup(
+    # make HasNextWrapper obj from search
+    # results to paginate through.
+    iter_page = HasNextWrapper(results)
+    curr_page = iter_page.next()
+
+    # make iter obj persistent so iter pointer
+    # remember it's position.
+    user_data["dictionary_page"] = (text, iter_page)
+
+    message_text = (
+        f"*Word*: {text}\n"
+        f'*× Type*: {curr_page.get("partOfSpeech") or "N/A"}\n'
+        f'*× Meaning*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
+        f'*× Example*: {curr_page["definitions"][0].get("example") or "N/A"}\n'
+        f'*× Synonym*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}'
+    )
+
+    msg.reply_text(
+        message_text,
+        parse_mode="markdown",
+        reply_markup=InlineKeyboardMarkup(
+            [
                 [
-                    [
-                        (
-                            InlineKeyboardButton(
-                                text="Next",
-                                url="google.com"
-                                # callback_data=next_meaning,
-                            )
-                        )
-                    ]
+                    InlineKeyboardButton(
+                        text="Next meaning »",
+                        callback_data=f"dictionaryNextPage_{user.id}",
+                    )
                 ]
-            ),
+            ]
+        ),
+    )
+
+
+def dictionary_btn(update, context):
+    user = update.effective_user
+    query = update.callback_query
+    user_data = context.user_data
+
+    user_id = query.data.split("_")[1]
+    if int(user_id) != user.id:
+        return query.answer("You're not allowed to do this!", show_alert=True)
+
+    try:
+        iter_page = user_data["dictionary_page"][1]
+        searched_word = user_data["dictionary_page"][0]
+    except KeyError:
+        return query.answer(
+            "Data of this button was lost! most probably due to restart of bot.",
+            show_alert=True,
         )
-    except BadRequest as err:
-        msg.reply_text(f"Error! {err.message}")
+
+    if iter_page.hasnext():
+        query.answer()
+        curr_page = iter_page.next()
+        message_text = (
+            f"*× Word*: {searched_word}\n"
+            f'*× Type*: {curr_page.get("partOfSpeech") or "N/A"}\n'
+            f'*× Meaning*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
+            f'*× Example*: {curr_page["definitions"][0].get("example") or "N/A"}\n'
+            f'*× Synonym*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}'
+        )
+        query.edit_message_text(
+            message_text,
+            reply_markup=query.message.reply_markup,
+            parse_mode="markdown",
+        )
+    else:
+        query.answer("Last page reached!")
 
 
 @typing_action
@@ -751,6 +769,9 @@ REPO_HANDLER = CommandHandler("repo", repo, pass_args=True, run_async=True)
 DICT_HANDLER = CommandHandler(
     "dict", dictionary, pass_args=True, run_async=True
 )
+DICT_BTN_HANDLER = CallbackQueryHandler(
+    dictionary_btn, pattern=r"dictionaryNextPage_"
+)
 NEKOFY_HANDLER = CommandHandler(
     "nekofy", nekobin, pass_args=True, run_async=True
 )
@@ -770,4 +791,5 @@ dispatcher.add_handler(PYEVAL_HANDLER)
 dispatcher.add_handler(GITHUB_HANDLER)
 dispatcher.add_handler(REPO_HANDLER)
 dispatcher.add_handler(DICT_HANDLER)
+dispatcher.add_handler(DICT_BTN_HANDLER)
 dispatcher.add_handler(NEKOFY_HANDLER)

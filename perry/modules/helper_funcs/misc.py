@@ -6,6 +6,32 @@ from telegram.error import TelegramError
 from perry import LOAD, NO_LOAD
 
 
+class HasNextWrapper:
+
+    def __init__(self, it):
+        self.it = iter(it)
+        self._hasnext = None
+        self._thenext = None
+
+    def next(self):
+        if self._hasnext:
+            result = self._thenext
+        else:
+            result = next(self.it)
+        self._hasnext = None
+        return result
+
+    def hasnext(self):
+        if self._hasnext is None:
+            try:
+                self._thenext = next(self.it)
+            except StopIteration:
+                self._hasnext = False
+            else:
+                self._hasnext = True
+        return self._hasnext
+
+
 class EqInlineKeyboardButton(InlineKeyboardButton):
     def __eq__(self, other):
         return self.text == other.text

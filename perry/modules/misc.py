@@ -26,7 +26,7 @@ from telegram import (
     TelegramError,
 )
 
-from telegram.ext import CommandHandler, Filters
+from telegram.ext import CommandHandler, CallbackQueryHandler, Filters
 from telegram.utils.helpers import escape_markdown, mention_html
 from telegram.error import BadRequest
 
@@ -45,6 +45,7 @@ from perry.modules.disable import DisableAbleCommandHandler
 from perry.modules.helper_funcs.extraction import extract_user
 from perry.modules.helper_funcs.filters import CustomFilters
 from perry.modules.helper_funcs.alternate import typing_action, send_action
+from perry.modules.helper_funcs.misc import HasNextWrapper
 
 
 @typing_action
@@ -70,7 +71,9 @@ def get_id(update, context):
         else:
             user = context.bot.get_chat(user_id)
             update.effective_message.reply_text(
-                "{}'s id is `{}`.".format(escape_markdown(user.first_name), user.id),
+                "{}'s id is `{}`.".format(
+                    escape_markdown(user.first_name), user.id
+                ),
                 parse_mode=ParseMode.MARKDOWN,
             )
     else:
@@ -263,7 +266,9 @@ Keep in mind that your message <b>MUST</b> contain some text other than just a b
 
 @typing_action
 def markdown_help(update, context):
-    update.effective_message.reply_text(MARKDOWN_HELP, parse_mode=ParseMode.HTML)
+    update.effective_message.reply_text(
+        MARKDOWN_HELP, parse_mode=ParseMode.HTML
+    )
     update.effective_message.reply_text(
         "Try forwarding the following message to me, and you'll see!"
     )
@@ -318,16 +323,16 @@ def ud(update, context):
         msg.reply_text("Please enter keywords to search!")
         return
     try:
-        results = get(f"http://api.urbandictionary.com/v0/define?term={text}").json()
+        results = get(
+            f"http://api.urbandictionary.com/v0/define?term={text}"
+        ).json()
         reply_text = (
             f"Word: {text}\n\n"
             f'Definition:\n{results["list"][0]["definition"]}\n\n'
             f'Example:\n{results["list"][0]["example"]}\n\n'
         )
     except IndexError:
-        reply_text = (
-            f"Word: {text}\nResults: Sorry could not find any matching results!"
-        )
+        reply_text = f"Word: {text}\nResults: Sorry could not find any matching results!"
     ignore_chars = "[]"
     reply = reply_text
     for chars in ignore_chars:
@@ -343,47 +348,92 @@ def ud(update, context):
 @typing_action
 def dictionary(update, context):
     msg = update.effective_message
-    lang, text = update.effective_message.text.split(None, 2)[1:]
-    if not text:
-        msg.reply_text("Please enter keywords to search!")
-        return
+    user = update.effective_user
+    user_data = context.user_data
+    inputlist = update.effective_message.text.split(None, 2)[1:]
+
+    # handle args
+    lang = "en"
+    if len(inputlist) == 0:
+        return msg.reply_text("Please enter keywords to search!")
+    elif len(inputlist) == 1:
+        text = inputlist[0]
+    else:
+        lang, text = inputlist
+
+    resp = get(f"https://api.dictionaryapi.dev/api/v2/entries/{lang}/{text}")
+    if resp.status_code != 200:
+        return msg.reply_text("Sorry! could'nt find any results...")
+    results = resp.json()[0]["meanings"]
+
+    # make HasNextWrapper obj from search
+    # results to paginate through.
+    iter_page = HasNextWrapper(results)
+    curr_page = iter_page.next()
+
+    # make iter obj persistent so iter pointer
+    # remember it's position.
+    user_data["dictionary_page"] = (text, iter_page)
+
+    message_text = (
+        f"*× Word*: {text}\n"
+        f'*× Type*: {curr_page.get("partOfSpeech") or "N/A"}\n'
+        f'*× Meaning*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
+        f'*× Example*: {curr_page["definitions"][0].get("example") or "N/A"}\n'
+        f'*× Synonym*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}'
+    )
+
+    msg.reply_text(
+        message_text,
+        parse_mode="markdown",
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        text="Next meaning »",
+                        callback_data=f"dictionaryNextPage_{user.id}",
+                    )
+                ]
+            ]
+        ),
+    )
+
+
+def dictionary_btn(update, context):
+    user = update.effective_user
+    query = update.callback_query
+    user_data = context.user_data
+
+    user_id = query.data.split("_")[1]
+    if int(user_id) != user.id:
+        return query.answer("You're not allowed to do this!", show_alert=True)
+
     try:
-        results = get(
-            f"https://api.dictionaryapi.dev/api/v2/entries/{lang}/{text}"
-        ).json()
-        synonyms = results[0]["meanings"][0]["definitions"][0]["synonyms"]
-        reply_text = (
-            f'Word: {results[0]["word"]}\n\n'
-            f'× Type: {results[0]["meanings"][0]["partOfSpeech"]}\n\n'
-            f'× Meaning: {results[0]["meanings"][0]["definitions"][0]["definition"]}\n\n'
-            f'× Example: {results[0]["meanings"][0]["definitions"][0]["example"]}\n\n'
-            # f"Synonyms:"
-            # for synonyms in results[0]["meanings"][0]["definitions"]:
-            #     length = len(synonyms)
-            #     if length == 0:
-            #         "No synonyms found!"
-            #     else:
-            #         print(synonyms)
-            # if get({synonyms[0]}).json() == null:
-            f"× Synonyms: {synonyms[0]}, {synonyms[1]}, {synonyms[2]}\n"
-            # for definition in results[0]["meanings"][0]["definitions"]:
-            #     f'{[0]["definition"]}'
-            #     f'{[0]["example"]}'
+        iter_page = user_data["dictionary_page"][1]
+        searched_word = user_data["dictionary_page"][0]
+    except KeyError:
+        return query.answer(
+            "Data of this button was lost! most probably due to restart of bot.",
+            show_alert=True,
         )
-    except IndexError:
-        reply_text = (
-            f"Word: {text}\nResults: Sorry, could not find any matching results!"
+
+    if iter_page.hasnext():
+        query.answer()
+        curr_page = iter_page.next()
+        message_text = (
+            f"*× Word*: {searched_word}\n"
+            f'*× Type*: {curr_page.get("partOfSpeech") or "N/A"}\n'
+            f'*× Meaning*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
+            f'*× Example*: {curr_page["definitions"][0].get("example") or "N/A"}\n'
+            f'*× Synonym*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}'
         )
-    ignore_chars = "[]"
-    reply = reply_text
-    for chars in ignore_chars:
-        reply = reply.replace(chars, "")
-    if len(reply) >= 4096:
-        reply = reply[:4096]  # max msg lenth of tg.
-    try:
-        msg.reply_text(reply)
-    except BadRequest as err:
-        msg.reply_text(f"Error! {err.message}")
+        query.edit_message_text(
+            message_text,
+            reply_markup=query.message.reply_markup,
+            parse_mode="markdown",
+        )
+    else:
+        query.answer("Last page reached!")
 
 
 @typing_action
@@ -412,7 +462,9 @@ def getlink(update, context):
                 links += str(chat_id) + ":\n" + invitelink + "\n"
             else:
                 links += (
-                    str(chat_id) + ":\nI don't have access to the invite link." + "\n"
+                    str(chat_id)
+                    + ":\nI don't have access to the invite link."
+                    + "\n"
                 )
         except BadRequest as excp:
             links += str(chat_id) + ":\n" + excp.message + "\n"
@@ -486,7 +538,9 @@ def shell(update, context):
         )
         stdout, stderr = res.communicate()
         result = str(stdout.decode().strip()) + str(stderr.decode().strip())
-        rep.edit_text("<pre>" + escape(result) + "</pre>", parse_mode=ParseMode.HTML)
+        rep.edit_text(
+            "<pre>" + escape(result) + "</pre>", parse_mode=ParseMode.HTML
+        )
     except Exception as excp:
         if hasattr(excp, "message"):
             if str(excp.message) == "Message must be non-empty":
@@ -586,7 +640,9 @@ def github(update, context):
                 ),
             )
         else:
-            message.reply_text = "User not found. Make sure you entered valid username!"
+            message.reply_text = (
+                "User not found. Make sure you entered valid username!"
+            )
     else:
         message.reply_text("Enter the GitHub username you want stats for!")
 
@@ -602,10 +658,14 @@ def repo(update, context):
         for i in range(len(usr)):
             reply_text += f"[{usr[i]['name']}]({usr[i]['html_url']})\n"
         message.reply_text(
-            reply_text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True
+            reply_text,
+            parse_mode=ParseMode.MARKDOWN,
+            disable_web_page_preview=True,
         )
     else:
-        message.reply_text("Enter someone's GitHub username to view their repos!")
+        message.reply_text(
+            "Enter someone's GitHub username to view their repos!"
+        )
 
 
 @typing_action
@@ -705,7 +765,9 @@ __mod_name__ = "Miscs"
 ID_HANDLER = DisableAbleCommandHandler("id", get_id, pass_args=True)
 INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
 ECHO_HANDLER = CommandHandler("echo", echo, filters=CustomFilters.sudo_filter)
-MD_HELP_HANDLER = CommandHandler("markdownhelp", markdown_help, filters=Filters.private)
+MD_HELP_HANDLER = CommandHandler(
+    "markdownhelp", markdown_help, filters=Filters.private
+)
 STATS_HANDLER = CommandHandler("stats", stats, filters=Filters.user(OWNER_ID))
 GDPR_HANDLER = CommandHandler("gdpr", gdpr, filters=Filters.private)
 WIKI_HANDLER = DisableAbleCommandHandler("wiki", wiki)
@@ -723,10 +785,20 @@ SHELL_HANDLER = CommandHandler(
 PYEVAL_HANDLER = CommandHandler(
     "exec", pyeval, filters=CustomFilters.sudo_filter, run_async=True
 )
-GITHUB_HANDLER = CommandHandler("gitstats", github, pass_args=True, run_async=True)
+GITHUB_HANDLER = CommandHandler(
+    "gitstats", github, pass_args=True, run_async=True
+)
 REPO_HANDLER = CommandHandler("repo", repo, pass_args=True, run_async=True)
-DICT_HANDLER = CommandHandler("dict", dictionary, pass_args=True, run_async=True)
-NEKOFY_HANDLER = CommandHandler("nekofy", nekobin, pass_args=True, run_async=True)
+DICT_HANDLER = CommandHandler(
+    "dict", dictionary, pass_args=True, run_async=True
+)
+DICT_BTN_HANDLER = CallbackQueryHandler(
+    dictionary_btn, pattern=r"dictionaryNextPage_"
+)
+
+NEKOFY_HANDLER = CommandHandler(
+    "nekofy", nekobin, pass_args=True, run_async=True
+)
 dispatcher.add_handler(UD_HANDLER)
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(INFO_HANDLER)
@@ -743,4 +815,5 @@ dispatcher.add_handler(PYEVAL_HANDLER)
 dispatcher.add_handler(GITHUB_HANDLER)
 dispatcher.add_handler(REPO_HANDLER)
 dispatcher.add_handler(DICT_HANDLER)
+dispatcher.add_handler(DICT_BTN_HANDLER)
 dispatcher.add_handler(NEKOFY_HANDLER)

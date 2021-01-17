@@ -391,7 +391,7 @@ def dictionary(update, context):
             [
                 [
                     InlineKeyboardButton(
-                        text="Next meaning »",
+                        text="Next ➡️",
                         callback_data=f"dictionaryNextPage_{user.id}",
                     )
                 ]
@@ -407,7 +407,9 @@ def dictionary_btn(update, context):
 
     user_id = query.data.split("_")[1]
     if int(user_id) != user.id:
-        return query.answer("You're not allowed to do this!", show_alert=True)
+        return query.answer(
+            "You're not the person who initated the command!", show_alert=True
+        )
 
     try:
         iter_page = user_data["dictionary_page"][1]
@@ -426,7 +428,8 @@ def dictionary_btn(update, context):
             f'*× Type*: {curr_page.get("partOfSpeech") or "N/A"}\n'
             f'*× Definition*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
             f'*× Example*: {curr_page["definitions"][0].get("example") or "N/A"}\n'
-            f'*× Synonyms*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}'
+            f'*× Synonyms*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}\n'
+            f"**\nPress 'Next' to view different parts of speech if available (noun, verb, adjective, etc.).**"
         )
         query.edit_message_text(
             message_text,

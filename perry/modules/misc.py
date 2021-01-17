@@ -414,7 +414,7 @@ def dictionary_btn(update, context):
         searched_word = user_data["dictionary_page"][0]
     except KeyError:
         return query.answer(
-            "Data of this button was lost! most probably due to restart of bot.",
+            "Data of this button is lost! Most likely due to the restart of the bot.",
             show_alert=True,
         )
 
@@ -422,11 +422,11 @@ def dictionary_btn(update, context):
         query.answer()
         curr_page = iter_page.next()
         message_text = (
-            f"*× Word*: {searched_word}\n"
+            f"*Word*: {searched_word}\n"
             f'*× Type*: {curr_page.get("partOfSpeech") or "N/A"}\n'
-            f'*× Meaning*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
+            f'*× Definition*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
             f'*× Example*: {curr_page["definitions"][0].get("example") or "N/A"}\n'
-            f'*× Synonym*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}'
+            f'*× Synonyms*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}'
         )
         query.edit_message_text(
             message_text,
@@ -434,7 +434,7 @@ def dictionary_btn(update, context):
             parse_mode="markdown",
         )
     else:
-        query.answer("Last page reached!")
+        query.answer("No other meanings found!")
 
 
 @typing_action

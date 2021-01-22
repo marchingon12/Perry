@@ -660,14 +660,20 @@ def repo(update, context):
     text = " ".join(args).lower()
     usr = get(f"https://api.github.com/users/{text}/repos?per_page=40").json()
     if len(args) >= 1:
-        reply_text = f"*{text}*" + "*'s*" + "* Repos:*\n"
-        for i in range(len(usr)):
-            reply_text += f"[{usr[i]['name']}]({usr[i]['html_url']})\n"
-        message.reply_text(
-            reply_text,
-            parse_mode=ParseMode.MARKDOWN,
-            disable_web_page_preview=True,
-        )
+        if len(usr) != 0:
+            reply_text = f"*{text}*" + "*'s*" + "* Repos:*\n"
+            for i in range(len(usr)):
+                reply_text += f"[{usr[i]['name']}]({usr[i]['html_url']})\n"
+            message.reply_text(
+                reply_text,
+                parse_mode=ParseMode.MARKDOWN,
+                disable_web_page_preview=True,
+            )
+        else:
+            return message.reply_text(
+                "*User/Organization not found!* \nMake sure to enter a valid username.",
+                parse_mode=ParseMode.MARKDOWN,
+            )
     else:
         message.reply_text(
             "Enter someone's GitHub username to view their repos!"

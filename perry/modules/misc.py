@@ -380,8 +380,8 @@ def dictionary(update, context):
         f"*Word*: {text}\n"
         f'*× Type*: {curr_page.get("partOfSpeech") or "N/A"}\n'
         f'*× Definition*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
-        f'*× Example*: {curr_page["definitions"][0].get("example") or "N/A"}\n'
-        f'*× Synonym*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}\n'
+        f'*× Example*: {curr_page["definitions"][0].get("example") or "_None found_"}\n'
+        f'*× Synonym*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "_None found_"}\n'
     )
     message_text += f"\n_Press 'Next' to view different parts of speech if available (noun, verb, adjective, etc.)._"
 
@@ -428,8 +428,8 @@ def dictionary_btn(update, context):
             f"*Word*: {searched_word}\n"
             f'*× Type*: {curr_page.get("partOfSpeech") or "N/A"}\n'
             f'*× Definition*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
-            f'*× Example*: {curr_page["definitions"][0].get("example") or "N/A"}\n'
-            f'*× Synonyms*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "N/A"}\n'
+            f'*× Example*: {curr_page["definitions"][0].get("example") or "_None found_"}\n'
+            f'*× Synonyms*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "_None found_"}\n'
         )
         message_text += f"\n_Press 'Next' to view different parts of speech if available (noun, verb, adjective, etc.)._"
         query.edit_message_text(
@@ -645,9 +645,7 @@ def github(update, context):
                 ),
             )
         else:
-            message.reply_text = (
-                "User not found. Make sure you entered valid username!"
-            )
+            message.reply_text = "User/Organization not found. Make sure you entered valid username!"
     else:
         message.reply_text("Enter the GitHub username you want stats for!")
 

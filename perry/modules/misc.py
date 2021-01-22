@@ -579,7 +579,7 @@ def github(update, context):
     text = " ".join(args).lower()
     usr = get(f"https://api.github.com/users/{text}").json()
     if len(args) >= 1:
-        if usr.get("login"):
+        try:
             text = f"*Username:* [{usr['login']}](https://github.com/{usr['login']})"
 
             whitelist = [
@@ -644,8 +644,11 @@ def github(update, context):
                     ]
                 ),
             )
-        else:
-            message.reply_text = "User/Organization not found. Make sure you entered valid username!"
+        except BadRequest:
+            return message.reply_text(
+                "*User/Organization not found!* \nMake sure to enter a valid username.",
+                parse_mode=ParseMode.MARKDOWN,
+            )
     else:
         message.reply_text("Enter the GitHub username you want stats for!")
 

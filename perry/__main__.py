@@ -206,8 +206,8 @@ def error_handler(update, context):
     trace = "".join(tb_list)
 
     # lets try to get as much information from the telegram update as possible
-    payload = f"\n<b>- Command</b>: <code>{cmd}</code>"
-    payload += f"\n<b>- Arguments</b>: <code>{args}</code>"
+    payload = f"\n<b>- Command</b>:<code> {cmd}</code>"
+    payload += f"\n<b>- Arguments</b>:<code> {args}</code>"
     payload += f"\n<b>- Error message</b>:\n<code>{context.error}</code>"
     # normally, we always have a user. If not, its either a channel or a poll update.
     if update.effective_user:
@@ -215,11 +215,13 @@ def error_handler(update, context):
     # there are more situations when you don't get a chat
     if update.effective_chat:
         if update.effective_chat.title == None:
-            payload += f" \n<b>- Chat</b>: <i>Bot PM</i>"
+            payload += f" \n<b>- Chat</b>:<b> Bot PM</b>"
         else:
-            payload += (
-                f" \n<b>- Chat</b>: <i>{update.effective_chat.title}</i>"
-            )
+            invite_link = update.effective_chat.link
+            if invite_link is None:
+                payload += f" \n<b>- Chat</b>:<b> {update.effective_chat.title}</b>, chat is <b>private</b>"
+            else:
+                payload += f' \n<b>- Chat</b>:<a href="{invite_link}"><b> {update.effective_chat.title}</b></a>'
     # but only one where you have an empty payload by now: A poll (buuuh)
     if update.poll:
         payload += f" \n<b>- Poll id</b>: {update.poll.id}."

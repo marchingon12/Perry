@@ -6,7 +6,7 @@
 [![ForTheBadge built-with-love](http://ForTheBadge.com/images/badges/built-with-love.svg)](https://GitHub.com/Naereen/)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/ac5b62f098ca476098e3e4e92b9a149c)](https://www.codacy.com/manual/marchingon12/Perry?utm_source=github.com&utm_medium=referral&utm_content=marchingon12/Perry&utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b4c94da4a8e54435b2f23a97a2fe6748)](https://www.codacy.com/gh/marchingon12/Perry/dashboard?utm_source=github.com&utm_medium=referral&utm_content=marchingon12/Perry&utm_campaign=Badge_Grade)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com)
 [![Actively Maintained](https://img.shields.io/badge/Maintenance%20Level-Actively%20Maintained-green.svg)](https://gist.github.com/cheerfulstoic/d107229326a01ff0f333a1d3476e068d)
 

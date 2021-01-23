@@ -657,11 +657,15 @@ def github(update, context):
 def repo(update, context):
     message = update.effective_message
     args = context.args
-    text = " ".join(args).lower()
+    text = " ".join(args)
     usr = get(f"https://api.github.com/users/{text}/repos?per_page=40").json()
     if len(args) >= 1:
         if len(usr) != 0:
-            reply_text = f"*{text}*" + "*'s*" + "* Repos:*\n"
+            if text[len(args) - 1] == "s":
+                has_s = "*'*"
+            else:
+                has_s = "*'s*"
+            reply_text = f"*{text}*" + f"{has_s}" + "* Repos:*\n"
             for i in range(len(usr)):
                 reply_text += f"[{usr[i]['name']}]({usr[i]['html_url']})\n"
             message.reply_text(
@@ -737,15 +741,16 @@ An "odds and ends" module for small, simple commands which don't really fit anyw
 
  × /id: Get the current group id. If used by replying to a message, gets that user's id.
  × /info: Get information about a user.
- × /source: Get the codebase source link.
+ × /source: Get the bot's source link.
  × /gitstats <username>: Get Github stats of a user.
- × /repo <username>: Displays a list of hyperlinked repos of a user on Github.
+ × /repo <username>: Displays a list of hyperlinked repos by a user on Github.
+ × /nekofy <py/c/java/txt...> <code>: Uploads input code to neko.bin (max. 4096 chars). Reply to file to upload. 
  × /wiki <query>: Search wikipedia articles.
- × /dict <query>: Search for words you are unsure about with a dictionary. Supported languages are: en, de fr.
+ × /dict <query>: Search for words you are unsure about with a dictionary. Supported languages are: en, de, fr, ru.
  × /ud <query> : Search stuffs in urban dictionary.
  × /reverse: Reverse searches image or stickers on google.
- × /gdpr: Deletes your information from the bot's database. Private chats only.
- × /markdownhelp: Quick summary of how markdown works in telegram - can only be called in private chats.
+ × /gdpr: Deletes your information from the bot's database. Private group chats only.
+ × /markdownhelp: Short summary of how markdown works in Telegram (can only be called in private group chats/Bot pm).
 """
 
 __mod_name__ = "Miscs"
@@ -766,7 +771,7 @@ GETLINK_HANDLER = CommandHandler(
 STAFFLIST_HANDLER = CommandHandler(
     "staffids", staff_ids, filters=Filters.user(OWNER_ID)
 )
-SRC_HANDLER = CommandHandler("source", src, filters=Filters.private)
+SRC_HANDLER = CommandHandler("source", src)
 SHELL_HANDLER = CommandHandler(
     "shell", shell, filters=Filters.user(OWNER_ID), run_async=True
 )

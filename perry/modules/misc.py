@@ -9,7 +9,6 @@ from typing import Optional, List
 from requests import get
 from html import escape
 from datetime import datetime
-from google_trans_new import LANGUAGES, google_translator
 
 from io import BytesIO
 from random import randint
@@ -37,7 +36,6 @@ from perry import (
     SUDO_USERS,
     SUPPORT_USERS,
     WHITELIST_USERS,
-    WALL_API,
     spamwtc,
 )
 from perry.__main__ import STATS, USER_INFO, GDPR
@@ -572,116 +570,203 @@ def stats(update, context):
     )
 
 
-@typing_action
-def github(update, context):
-    message = update.effective_message
-    args = context.args
-    text = " ".join(args).lower()
-    usr = get(f"https://api.github.com/users/{text}").json()
-    if len(args) >= 1:
-        try:
-            text = f"*Username:* [{usr['login']}](https://github.com/{usr['login']})"
+# @typing_action
+# def github(update, context):
+#     message = update.effective_message
+#     args = context.args
+#     text = " ".join(args).lower()
+#     usr = get(f"https://api.github.com/users/{text}").json()
+#     if len(args) >= 1:
+#         try:
+#             text = f"*Username:* [{usr['login']}](https://github.com/{usr['login']})"
 
-            whitelist = [
-                "name",
-                "id",
-                "type",
-                "location",
-                "blog",
-                "bio",
-                "followers",
-                "following",
-                "hireable",
-                "public_gists",
-                "public_repos",
-                "email",
-                "company",
-                "updated_at",
-                "created_at",
-            ]
+#             whitelist = [
+#                 "name",
+#                 "id",
+#                 "type",
+#                 "location",
+#                 "blog",
+#                 "bio",
+#                 "followers",
+#                 "following",
+#                 "hireable",
+#                 "public_gists",
+#                 "public_repos",
+#                 "email",
+#                 "company",
+#                 "updated_at",
+#                 "created_at",
+#             ]
 
-            difnames = {
-                "id": "Account ID",
-                "type": "Account type",
-                "created_at": "Account created at",
-                "updated_at": "Last updated",
-                "public_repos": "Public Repos",
-                "public_gists": "Public Gists",
-            }
+#             difnames = {
+#                 "id": "Account ID",
+#                 "type": "Account type",
+#                 "created_at": "Account created at",
+#                 "updated_at": "Last updated",
+#                 "public_repos": "Public Repos",
+#                 "public_gists": "Public Gists",
+#             }
 
-            goaway = [None, 0, "null", ""]
+#             goaway = [None, 0, "null", ""]
 
-            for x, y in usr.items():
-                if x in whitelist:
-                    x = difnames.get(x, x.title())
+#             for x, y in usr.items():
+#                 if x in whitelist:
+#                     x = difnames.get(x, x.title())
 
-                    if x in ["Account created at", "Last updated"]:
-                        y = datetime.strptime(y, "%Y-%m-%dT%H:%M:%SZ")
+#                     if x in ["Account created at", "Last updated"]:
+#                         y = datetime.strptime(y, "%Y-%m-%dT%H:%M:%SZ")
 
-                    if y not in goaway:
-                        if x == "Blog":
-                            x = "Website"
-                            y = f"[Here!]({y})"
-                            text += "\n*{}:* {}".format(x, y)
-                        else:
-                            text += "\n*{}:* `{}`".format(x, y)
+#                     if y not in goaway:
+#                         if x == "Blog":
+#                             x = "Website"
+#                             y = f"[Here!]({y})"
+#                             text += "\n*{}:* {}".format(x, y)
+#                         else:
+#                             text += "\n*{}:* `{}`".format(x, y)
 
-            chat = update.effective_chat
-            dispatcher.bot.send_photo(
-                "{}".format(chat.id),
-                f"{usr['html_url']}",
-                caption=text,
-                parse_mode=ParseMode.MARKDOWN,
-                # disable_web_page_preview=True,
-                reply_markup=InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
-                                text=f"{usr['login']}'s profile",
-                                url=f"{usr['html_url']}",
-                            )
-                        ]
-                    ]
-                ),
-            )
-        except BadRequest:
-            return message.reply_text(
-                "*User/Organization not found!* \nMake sure to enter a valid username.",
-                parse_mode=ParseMode.MARKDOWN,
-            )
-    else:
-        message.reply_text("Enter the GitHub username you want stats for!")
+#             chat = update.effective_chat
+#             dispatcher.bot.send_photo(
+#                 "{}".format(chat.id),
+#                 f"{usr['html_url']}",
+#                 caption=text,
+#                 parse_mode=ParseMode.MARKDOWN,
+#                 # disable_web_page_preview=True,
+#                 reply_markup=InlineKeyboardMarkup(
+#                     [
+#                         [
+#                             InlineKeyboardButton(
+#                                 text=f"{usr['login']}'s profile",
+#                                 url=f"{usr['html_url']}",
+#                             )
+#                         ]
+#                     ]
+#                 ),
+#             )
+#         except BadRequest:
+#             return message.reply_text(
+#                 "*User/Organization not found!* \nMake sure to enter a valid username.",
+#                 parse_mode=ParseMode.MARKDOWN,
+#             )
+#     else:
+#         message.reply_text("Enter the GitHub username you want stats for!")
 
 
-@typing_action
-def repo(update, context):
-    message = update.effective_message
-    args = context.args
-    text = " ".join(args)
-    usr = get(f"https://api.github.com/users/{text}/repos?per_page=40").json()
-    if len(args) >= 1:
-        if len(usr) != 0:
-            if text[len(args) - 1] == "s":
-                has_s = "*'*"
-            else:
-                has_s = "*'s*"
-            reply_text = f"*{text}*" + f"{has_s}" + "* Repos:*\n"
-            for i in range(len(usr)):
-                reply_text += f"[{usr[i]['name']}]({usr[i]['html_url']})\n"
-            message.reply_text(
-                reply_text,
-                parse_mode=ParseMode.MARKDOWN,
-                disable_web_page_preview=True,
-            )
-        else:
-            return message.reply_text(
-                "*User/Organization not found!* \nMake sure to enter a valid username.",
-                parse_mode=ParseMode.MARKDOWN,
-            )
-    else:
-        message.reply_text(
-            "Enter someone's GitHub username to view their repos!"
-        )
+# @typing_action
+# def repo(update, context):
+#     message = update.effective_message
+#     args = message.text.split(None, 2)[1:]
+#     text = ""
+
+#     # handle args
+#     if len(args) == 0:
+#         return message.reply_text(
+#             "Enter someone's GitHub username to view their repos or get repo data with username and repo name!"
+#         )
+#     elif len(args) == 1:
+#         user = args[0]
+#         usr_data = get(
+#             f"https://api.github.com/users/{user}/repos?per_page=40"
+#         ).json()
+
+#         if len(usr_data) != 0:
+#             if text[len(args) - 1] == "s":
+#                 has_s = "*'*"
+#             else:
+#                 has_s = "*'s*"
+#             reply_text = f"*{text}*" + f"{has_s}" + "* Repos:*\n"
+#             for i in range(len(usr_data)):
+#                 reply_text += (
+#                     f"[{usr_data[i]['name']}]({usr_data[i]['html_url']})\n"
+#                 )
+#             message.reply_text(
+#                 reply_text,
+#                 parse_mode=ParseMode.MARKDOWN,
+#                 disable_web_page_preview=True,
+#             )
+#         else:
+#             return message.reply_text(
+#                 "*User/Organization not found!* \nMake sure to enter a valid username.",
+#                 parse_mode=ParseMode.MARKDOWN,
+#             )
+#     else:
+#         user, repo = args
+#         rep_data = get(f"https://api.github.com/repos/{user}/{repo}")
+#         try:
+#             text = f"*Repo name:* {rep_data['full_name']}"
+
+#             whitelist = [
+#                 "name",
+#                 "description",
+#                 "id",
+#                 "language",
+#                 "forks_count",
+#                 "open_issues",
+#                 # "license",
+#                 "homepage",
+#                 "archived",
+#                 "updated_at",
+#                 "created_at",
+#             ]
+
+#             difnames = {
+#                 "id": "Repo ID",
+#                 "created_at": "Repo created at",
+#                 "updated_at": "Last updated",
+#                 "open_issues": "Open issues",
+#                 "forks_count": "Forks count",
+#             }
+
+#             goaway = [None, 0, "null", ""]
+
+#             for x, y in rep_data.items():
+#                 if x in whitelist:
+#                     x = difnames.get(x, x.title())
+
+#                     if x in ["Repo created at", "Last updated"]:
+#                         y = datetime.strptime(y, "%Y-%m-%dT%H:%M:%SZ")
+
+#                     if y not in goaway:
+#                         if x == "Homepage":
+#                             x = "Website"
+#                             y = f"[Here!]({y})"
+#                             text += "\n*{}:* {}".format(x, y)
+#                         else:
+#                             text += "\n*{}:* `{}`".format(x, y)
+
+#             chat = update.effective_chat
+#             dispatcher.bot.send_photo(
+#                 "{}".format(chat.id),
+#                 f"{rep_data['html_url']}",
+#                 caption=text,
+#                 parse_mode=ParseMode.MARKDOWN,
+#                 # disable_web_page_preview=True,
+#                 reply_markup=InlineKeyboardMarkup(
+#                     [
+#                         [
+#                             InlineKeyboardButton(
+#                                 text="Repo link", url=f"{rep_data['html_url']}"
+#                             ),
+#                             InlineKeyboardButton(
+#                                 text="Issues",
+#                                 url=f"https://github.com/{user}/{repo}/issues",
+#                             ),
+#                             InlineKeyboardButton(
+#                                 text="Pull Requests",
+#                                 url=f"https://github.com/{user}/{repo}/pulls",
+#                             ),
+#                             InlineKeyboardButton(
+#                                 text="Clone",
+#                                 callback_data=f"cloneMessage_{user.id}",
+#                             ),
+#                         ]
+#                     ]
+#                 ),
+#             )
+#         except BadRequest:
+#             return message.reply_text(
+#                 "*User/Organization not found!* \nMake sure to enter a valid username.",
+#                 parse_mode=ParseMode.MARKDOWN,
+#             )
 
 
 @typing_action
@@ -730,7 +815,6 @@ def nekobin(update, context):
             "You have two options: \n1. Reply to a file or text to nekofy it!\n 2. Send command with text and specify file extension."
         )
 
-
 # /exec: Enables the OWNER and SUDO_USERS to execute python code using the bot.
 # /shell: Enables the OWNER to run bash commands within the server using the bot.
 # /echo: For SUDO_USERS, Perry will write and replace your message.
@@ -742,8 +826,6 @@ An "odds and ends" module for small, simple commands which don't really fit anyw
  × /id: Get the current group id. If used by replying to a message, gets that user's id.
  × /info: Get information about a user.
  × /source: Get the bot's source link.
- × /gitstats <username>: Get Github stats of a user.
- × /repo <username>: Displays a list of hyperlinked repos by a user on Github.
  × /nekofy <py/c/java/txt...> <code>: Uploads input code to neko.bin (max. 4096 chars). Reply to file to upload. 
  × /wiki <query>: Search wikipedia articles.
  × /dict <query>: Search for words you are unsure about with a dictionary. Supported languages are: en, de, fr, ru.
@@ -778,10 +860,6 @@ SHELL_HANDLER = CommandHandler(
 PYEVAL_HANDLER = CommandHandler(
     "exec", pyeval, filters=CustomFilters.sudo_filter, run_async=True
 )
-GITHUB_HANDLER = CommandHandler(
-    "gitstats", github, pass_args=True, run_async=True
-)
-REPO_HANDLER = CommandHandler("repo", repo, pass_args=True, run_async=True)
 DICT_HANDLER = CommandHandler(
     "dict", dictionary, pass_args=True, run_async=True
 )
@@ -791,6 +869,7 @@ DICT_BTN_HANDLER = CallbackQueryHandler(
 NEKOFY_HANDLER = CommandHandler(
     "nekofy", nekobin, pass_args=True, run_async=True
 )
+
 dispatcher.add_handler(UD_HANDLER)
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(INFO_HANDLER)
@@ -804,8 +883,5 @@ dispatcher.add_handler(STAFFLIST_HANDLER)
 dispatcher.add_handler(SRC_HANDLER)
 dispatcher.add_handler(SHELL_HANDLER)
 dispatcher.add_handler(PYEVAL_HANDLER)
-dispatcher.add_handler(GITHUB_HANDLER)
-dispatcher.add_handler(REPO_HANDLER)
 dispatcher.add_handler(DICT_HANDLER)
 dispatcher.add_handler(DICT_BTN_HANDLER)
-dispatcher.add_handler(NEKOFY_HANDLER)

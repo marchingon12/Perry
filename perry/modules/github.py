@@ -136,7 +136,7 @@ def repo(update, context):
             reply_text = f"*{user}*" + f"'s" + "* Repos:*\n"
             for i in range(len(usr_data)):
                 reply_text += (
-                    f"[{usr_data[i]['name']}]({usr_data[i]['html_url']})\n"
+                    f"- [{usr_data[i]['name']}]({usr_data[i]['html_url']})\n"
                 )
             message.reply_text(
                 reply_text,
@@ -151,14 +151,17 @@ def repo(update, context):
     else:
         user, repo = args
         rep_data = get(f"https://api.github.com/repos/{user}/{repo}").json()
+        brc_data = get(
+            f"https://api.github.com/repos/{user}/{repo}/branches"
+        ).json()
         try:
             text = f"*Repo name:* {rep_data['full_name']}"
+            text += f"\n*Language*: {rep_data['language']}"
+            text += f"\n*License*: `{rep_data['license']['name']}`"
 
             whitelist = [
                 "description",
                 "id",
-                "language",
-                # "license",
                 "homepage",
                 "archived",
                 "updated_at",
@@ -173,7 +176,7 @@ def repo(update, context):
                 "open_issues": "Open issues",
             }
 
-            empty = [None, "null", ""]
+            empty = [None, "null", "", False]
 
             for x, y in rep_data.items():
                 if x in whitelist:
@@ -194,7 +197,11 @@ def repo(update, context):
                             text += f"\n*{x}:* \n`{y}`"
                         else:
                             text += f"\n*{x}:* `{y}`"
-            
+
+            count = 0
+            for i in range(len(brc_data)):
+                count += 1
+            text += f"\n*Branches:* `{count}`"
             text += f"\n*🍴 Forks:* `{rep_data['forks_count']}` | *🌟 Stars:* `{rep_data['stargazers_count']}` "
 
             chat = update.effective_chat
@@ -289,6 +296,42 @@ def gitclone(update, context):
         )
 
 
+def gitbranch(update, context):
+    message = update.effective_message
+    args = message.text.split(None, 2)[1:]
+
+    # handle args
+    if len(args) == 1:
+        return message.reply_text(
+            "*You did not fufill the requirements!* \nSpecify the data needed: username and repository name.",
+            parse_mode=ParseMode.MARKDOWN,
+        )
+    elif len(args) == 2:
+        user, repo = args
+        rep_data = get(
+            f"https://api.github.com/repos/{user}/{repo}/branches"
+        ).json()
+
+        if len(rep_data) != 0:
+            reply_text = f" *{user}/{repo}* branches:\n"
+            for i in range(len(rep_data)):
+                reply_text += f"- [{rep_data[i]['name']}](https://github.com/{user}/{repo}/tree/{rep_data[i]['name']})\n"
+            message.reply_text(
+                reply_text,
+                parse_mode=ParseMode.MARKDOWN,
+                disable_web_page_preview=True,
+            )
+        else:
+            return message.reply_text(
+                "*User/Organization not found!* \nMake sure to enter a valid username.",
+                parse_mode=ParseMode.MARKDOWN,
+            )
+    else:
+        return message.reply_text(
+            "Enter someone's GitHub username to view their repos or get repo data with username and repo name!"
+        )
+
+
 __help__ = """
 Some useful git functions to make Github browsing easier and faster.
 
@@ -308,8 +351,12 @@ GITCLONE_HANDLER = CommandHandler(
 )
 REPO_HANDLER = CommandHandler("repo", repo, pass_args=True, run_async=True)
 # GITCLONE_BTN_HANDLER = CommandHandler(gitclone, pattern=r"cloneMessage_")
+GITBRANCH_HANDLER = CommandHandler(
+    "gitbranch", gitbranch, pass_args=True, run_async=True
+)
 
 dispatcher.add_handler(GITHUB_HANDLER)
 dispatcher.add_handler(REPO_HANDLER)
 dispatcher.add_handler(GITCLONE_HANDLER)
 # dispatcher.add_handler(GITCLONE_BTN_HANDLER)
+dispatcher.add_handler(GITBRANCH_HANDLER)

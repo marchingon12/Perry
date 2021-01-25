@@ -339,6 +339,7 @@ Some useful git functions to make Github browsing easier and faster.
 × /repo <username>: Displays a list of hyperlinked public repos by a user on Github.
 × /repo <username> <repo>: Get stats on a public repo.
 × /gitstats <username>: Get Github stats of a user.
+× /gitbranch <username> <repo>: Display a list of hyperlinked branches of a public repo.
 """
 
 __mod_name__ = "GitHub"

@@ -598,7 +598,7 @@ def nekobin(update, context):
 
         dispatcher.bot.send_message(
             message.chat.id,
-            text="<b>Nekofied: </b>",
+            text=f"<b>Message nekofied!</b>\n File extension: .{extension}",
             parse_mode=ParseMode.HTML,
             reply_markup=InlineKeyboardMarkup(
                 [

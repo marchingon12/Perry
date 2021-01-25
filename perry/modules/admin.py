@@ -245,8 +245,14 @@ def unpinall(update, context):
         message.reply_text("You are missing rights to unpin messages!")
         return ""
     
-    context.bot.unpinAllChatMessages(chat.id)
-
+    try:
+        context.bot.unpinAllChatMessages(chat.id)
+    except BadRequest as excp:
+        if excp.message == "Chat_not_modified":
+            pass
+        else:
+            raise
+        
     return(
         "<b>{}:</b>"
         "\n#UNPINNED ALL"

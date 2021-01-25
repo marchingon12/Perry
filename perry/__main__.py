@@ -195,7 +195,8 @@ def start(update, context):
 
 def error_handler(update, context):
     """Log the error and send a telegram message to notify the developer."""
-    cmd, args = update.effective_message.text.split(None, 1)
+    message = update.effective_message
+    text = message.text.split(None, 1)
     LOGGER.error(msg="Error found, check dump below:", exc_info=context.error)
 
     # traceback.format_exception returns the usual python message about an exception, but as a
@@ -204,6 +205,13 @@ def error_handler(update, context):
         None, context.error, context.error.__traceback__
     )
     trace = "".join(tb_list)
+
+    # if only a single command with no args then 
+    if len(text) == 1:
+        cmd = f"{text[0]}"
+        args = "None"
+    else:
+        cmd, args = text
 
     # lets try to get as much information from the telegram update as possible
     payload = f"\n<b>- Command</b>:<code> {cmd}</code>"

@@ -232,6 +232,29 @@ def unpin(update, context):
         )
     )
 
+@bot_admin
+@can_pin
+@user_admin
+@loggable
+def unpinall(update, context):
+    chat = update.effective_chat
+    user = update.effective_user
+    message = update.effective_message
+
+    if user_can_pin(chat, user, context.bot.id) is False:
+        message.reply_text("You are missing rights to unpin messages!")
+        return ""
+    
+    context.bot.unpinAllChatMessages(chat.id)
+
+    return(
+        "<b>{}:</b>"
+        "\n#UNPINNED ALL"
+        "\n<b>Admin:</b> {}".format(
+            html.escape(chat.title), mention_html(user.id, user.first_name)
+        )
+    )
+
 
 @bot_admin
 @user_admin
@@ -503,6 +526,7 @@ done easily using the bot.
 *Admin only:*
  × /pin: Silently pins the message replied to - add `loud`, `notify` or `violent` to give notificaton to users.
  × /unpin: Unpins the currently pinned message.
+ × /unpinall: Unpins all pinned messages.
  × /invitelink: Gets private chat's invitelink.
  × /promote: Promotes the user replied to.
  × /demote: Demotes the user replied to.
@@ -525,6 +549,7 @@ PIN_HANDLER = CommandHandler(
     "pin", pin, pass_args=True, filters=Filters.chat_type.groups
 )
 UNPIN_HANDLER = CommandHandler("unpin", unpin, filters=Filters.chat_type.groups)
+UNPINALL_HANDLER= CommandHandler("unpinall", unpinall, filters=Filters.chat_type.groups)
 
 INVITE_HANDLER = CommandHandler("invitelink", invite)
 CHAT_PIC_HANDLER = CommandHandler(
@@ -557,6 +582,7 @@ ADMINLIST_HANDLER = DisableAbleCommandHandler(
 
 dispatcher.add_handler(PIN_HANDLER)
 dispatcher.add_handler(UNPIN_HANDLER)
+dispatcher.add_handler(UNPINALL_HANDLER)
 dispatcher.add_handler(INVITE_HANDLER)
 dispatcher.add_handler(PROMOTE_HANDLER)
 dispatcher.add_handler(DEMOTE_HANDLER)

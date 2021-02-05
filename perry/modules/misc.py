@@ -9,7 +9,6 @@ from typing import Optional, List
 from requests import get
 from html import escape
 from datetime import datetime
-from google_trans_new import LANGUAGES, google_translator
 
 from io import BytesIO
 from random import randint
@@ -26,7 +25,7 @@ from telegram import (
     TelegramError,
 )
 
-from telegram.ext import CommandHandler, Filters
+from telegram.ext import CommandHandler, CallbackQueryHandler, Filters
 from telegram.utils.helpers import escape_markdown, mention_html
 from telegram.error import BadRequest
 
@@ -37,7 +36,6 @@ from perry import (
     SUDO_USERS,
     SUPPORT_USERS,
     WHITELIST_USERS,
-    WALL_API,
     spamwtc,
 )
 from perry.__main__ import STATS, USER_INFO, GDPR
@@ -45,6 +43,7 @@ from perry.modules.disable import DisableAbleCommandHandler
 from perry.modules.helper_funcs.extraction import extract_user
 from perry.modules.helper_funcs.filters import CustomFilters
 from perry.modules.helper_funcs.alternate import typing_action, send_action
+from perry.modules.helper_funcs.misc import HasNextWrapper
 
 
 @typing_action
@@ -70,7 +69,9 @@ def get_id(update, context):
         else:
             user = context.bot.get_chat(user_id)
             update.effective_message.reply_text(
-                "{}'s id is `{}`.".format(escape_markdown(user.first_name), user.id),
+                "{}'s id is `{}`.".format(
+                    escape_markdown(user.first_name), user.id
+                ),
                 parse_mode=ParseMode.MARKDOWN,
             )
     else:
@@ -263,7 +264,9 @@ Keep in mind that your message <b>MUST</b> contain some text other than just a b
 
 @typing_action
 def markdown_help(update, context):
-    update.effective_message.reply_text(MARKDOWN_HELP, parse_mode=ParseMode.HTML)
+    update.effective_message.reply_text(
+        MARKDOWN_HELP, parse_mode=ParseMode.HTML
+    )
     update.effective_message.reply_text(
         "Try forwarding the following message to me, and you'll see!"
     )
@@ -318,16 +321,16 @@ def ud(update, context):
         msg.reply_text("Please enter keywords to search!")
         return
     try:
-        results = get(f"http://api.urbandictionary.com/v0/define?term={text}").json()
+        results = get(
+            f"http://api.urbandictionary.com/v0/define?term={text}"
+        ).json()
         reply_text = (
             f"Word: {text}\n\n"
             f'Definition:\n{results["list"][0]["definition"]}\n\n'
             f'Example:\n{results["list"][0]["example"]}\n\n'
         )
     except IndexError:
-        reply_text = (
-            f"Word: {text}\nResults: Sorry could not find any matching results!"
-        )
+        reply_text = f"Word: {text}\nResults: Sorry could not find any matching results!"
     ignore_chars = "[]"
     reply = reply_text
     for chars in ignore_chars:
@@ -342,48 +345,98 @@ def ud(update, context):
 
 @typing_action
 def dictionary(update, context):
+
     msg = update.effective_message
-    lang, text = update.effective_message.text.split(None, 2)[1:]
-    if not text:
-        msg.reply_text("Please enter keywords to search!")
-        return
-    try:
-        results = get(
-            f"https://api.dictionaryapi.dev/api/v2/entries/{lang}/{text}"
-        ).json()
-        synonyms = results[0]["meanings"][0]["definitions"][0]["synonyms"]
-        reply_text = (
-            f'Word: {results[0]["word"]}\n\n'
-            f'× Type: {results[0]["meanings"][0]["partOfSpeech"]}\n\n'
-            f'× Meaning: {results[0]["meanings"][0]["definitions"][0]["definition"]}\n\n'
-            f'× Example: {results[0]["meanings"][0]["definitions"][0]["example"]}\n\n'
-            # f"Synonyms:"
-            # for synonyms in results[0]["meanings"][0]["definitions"]:
-            #     length = len(synonyms)
-            #     if length == 0:
-            #         "No synonyms found!"
-            #     else:
-            #         print(synonyms)
-            # if get({synonyms[0]}).json() == null:
-            f"× Synonyms: {synonyms[0]}, {synonyms[1]}, {synonyms[2]}\n"
-            # for definition in results[0]["meanings"][0]["definitions"]:
-            #     f'{[0]["definition"]}'
-            #     f'{[0]["example"]}'
+    user = update.effective_user
+    user_data = context.user_data
+    inputlist = update.effective_message.text.split(None, 2)[1:]
+
+    # handle args
+    lang = "en"
+    if len(inputlist) == 0:
+        return msg.reply_text("Please enter keywords to search!")
+    elif len(inputlist) == 1:
+        text = inputlist[0]
+    else:
+        lang, text = inputlist
+
+    resp = get(f"https://api.dictionaryapi.dev/api/v2/entries/{lang}/{text}")
+    if resp.status_code != 200:
+        return msg.reply_text("Sorry! could'nt find any results...")
+    results = resp.json()[0]["meanings"]
+
+    # make HasNextWrapper obj from search
+    # results to paginate through.
+    iter_page = HasNextWrapper(results)
+    curr_page = iter_page.next()
+
+    # make iter obj persistent so iter pointer
+    # remember it's position.
+    user_data["dictionary_page"] = (text, iter_page)
+
+    message_text = (
+        f"*Word*: {text}\n"
+        f'*× Type*: {curr_page.get("partOfSpeech") or "N/A"}\n'
+        f'*× Definition*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
+        f'*× Example*: {curr_page["definitions"][0].get("example") or "_None found_"}\n'
+        f'*× Synonym*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "_None found_"}\n'
+    )
+    message_text += f"\n_Press 'Next' to view different parts of speech if available (noun, verb, adjective, etc.)._"
+
+    msg.reply_text(
+        message_text,
+        parse_mode="markdown",
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        text="Next ➡️",
+                        callback_data=f"dictionaryNextPage_{user.id}",
+                    )
+                ]
+            ]
+        ),
+    )
+
+
+def dictionary_btn(update, context):
+    user = update.effective_user
+    query = update.callback_query
+    user_data = context.user_data
+
+    user_id = query.data.split("_")[1]
+    if int(user_id) != user.id:
+        return query.answer(
+            "You're not the person who initated the command!", show_alert=True
         )
-    except IndexError:
-        reply_text = (
-            f"Word: {text}\nResults: Sorry, could not find any matching results!"
-        )
-    ignore_chars = "[]"
-    reply = reply_text
-    for chars in ignore_chars:
-        reply = reply.replace(chars, "")
-    if len(reply) >= 4096:
-        reply = reply[:4096]  # max msg lenth of tg.
+
     try:
-        msg.reply_text(reply)
-    except BadRequest as err:
-        msg.reply_text(f"Error! {err.message}")
+        iter_page = user_data["dictionary_page"][1]
+        searched_word = user_data["dictionary_page"][0]
+    except KeyError:
+        return query.answer(
+            "Data of this button is lost! Most likely due to the restart of the bot.",
+            show_alert=True,
+        )
+
+    if iter_page.hasnext():
+        query.answer()
+        curr_page = iter_page.next()
+        message_text = (
+            f"*Word*: {searched_word}\n"
+            f'*× Type*: {curr_page.get("partOfSpeech") or "N/A"}\n'
+            f'*× Definition*: {curr_page["definitions"][0].get("definition") or "N/A"}\n'
+            f'*× Example*: {curr_page["definitions"][0].get("example") or "_None found_"}\n'
+            f'*× Synonyms*: {", ".join(curr_page["definitions"][0].get("synonyms", [])[:4]) or "_None found_"}\n'
+        )
+        message_text += f"\n_Press 'Next' to view different parts of speech if available (noun, verb, adjective, etc.)._"
+        query.edit_message_text(
+            message_text,
+            reply_markup=query.message.reply_markup,
+            parse_mode="markdown",
+        )
+    else:
+        query.answer("No other meanings found!")
 
 
 @typing_action
@@ -412,7 +465,9 @@ def getlink(update, context):
                 links += str(chat_id) + ":\n" + invitelink + "\n"
             else:
                 links += (
-                    str(chat_id) + ":\nI don't have access to the invite link." + "\n"
+                    str(chat_id)
+                    + ":\nI don't have access to the invite link."
+                    + "\n"
                 )
         except BadRequest as excp:
             links += str(chat_id) + ":\n" + excp.message + "\n"
@@ -486,7 +541,9 @@ def shell(update, context):
         )
         stdout, stderr = res.communicate()
         result = str(stdout.decode().strip()) + str(stderr.decode().strip())
-        rep.edit_text("<pre>" + escape(result) + "</pre>", parse_mode=ParseMode.HTML)
+        rep.edit_text(
+            "<code>" + escape(result) + "</code>", parse_mode=ParseMode.HTML
+        )
     except Exception as excp:
         if hasattr(excp, "message"):
             if str(excp.message) == "Message must be non-empty":
@@ -514,170 +571,50 @@ def stats(update, context):
 
 
 @typing_action
-def github(update, context):
-    message = update.effective_message
-    args = context.args
-    text = " ".join(args).lower()
-    usr = get(f"https://api.github.com/users/{text}").json()
-    if len(args) >= 1:
-        if usr.get("login"):
-            text = f"*Username:* [{usr['login']}](https://github.com/{usr['login']})"
-
-            whitelist = [
-                "name",
-                "id",
-                "type",
-                "location",
-                "blog",
-                "bio",
-                "followers",
-                "following",
-                "hireable",
-                "public_gists",
-                "public_repos",
-                "email",
-                "company",
-                "updated_at",
-                "created_at",
-            ]
-
-            difnames = {
-                "id": "Account ID",
-                "type": "Account type",
-                "created_at": "Account created at",
-                "updated_at": "Last updated",
-                "public_repos": "Public Repos",
-                "public_gists": "Public Gists",
-            }
-
-            goaway = [None, 0, "null", ""]
-
-            for x, y in usr.items():
-                if x in whitelist:
-                    x = difnames.get(x, x.title())
-
-                    if x in ["Account created at", "Last updated"]:
-                        y = datetime.strptime(y, "%Y-%m-%dT%H:%M:%SZ")
-
-                    if y not in goaway:
-                        if x == "Blog":
-                            x = "Website"
-                            y = f"[Here!]({y})"
-                            text += "\n*{}:* {}".format(x, y)
-                        else:
-                            text += "\n*{}:* `{}`".format(x, y)
-
-            chat = update.effective_chat
-            dispatcher.bot.send_photo(
-                "{}".format(chat.id),
-                f"{usr['html_url']}",
-                caption=text,
-                parse_mode=ParseMode.MARKDOWN,
-                # disable_web_page_preview=True,
-                reply_markup=InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
-                                text=f"{usr['login']}'s profile",
-                                url=f"{usr['html_url']}",
-                            )
-                        ]
-                    ]
-                ),
-            )
-        else:
-            message.reply_text = "User not found. Make sure you entered valid username!"
-    else:
-        message.reply_text("Enter the GitHub username you want stats for!")
-
-
-@typing_action
-def repo(update, context):
-    message = update.effective_message
-    args = context.args
-    text = " ".join(args).lower()
-    usr = get(f"https://api.github.com/users/{text}/repos?per_page=40").json()
-    if len(args) >= 1:
-        reply_text = f"*{text}*" + "*'s*" + "* Repos:*\n"
-        for i in range(len(usr)):
-            reply_text += f"[{usr[i]['name']}]({usr[i]['html_url']})\n"
-        message.reply_text(
-            reply_text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True
-        )
-    else:
-        message.reply_text("Enter someone's GitHub username to view their repos!")
-
-
-@typing_action
 def nekobin(update, context):
     message = update.effective_message
-    extension, text = update.effective_message.text.split(None, 2)[1:]
-    if "c" or "py" or "java" not in extension:
+    args = message.text.split(None, 2)[1:]
+
+    if len(args) == 1:
         extension = "txt"
+        text = args[0]
         message.reply_text(
             "You have not specified a file extension. Default: <b>.txt</b>",
             parse_mode=ParseMode.HTML,
         )
-        if len(text) >= 1:
-            key = (
-                r.post(
-                    "https://nekobin.com/api/documents",
-                    json={"content": f"{text}\n"},
-                )
-                .json()
-                .get("result")
-                .get("key")
-            )
-
-            dispatcher.bot.send_message(
-                message.chat.id,
-                text="<b>Nekofied: </b>",
-                parse_mode=ParseMode.HTML,
-                reply_markup=InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
-                                text="View on nekobin",
-                                url=f"https://nekobin.com/{key}.{extension}",
-                            ),
-                        ]
-                    ]
-                ),
-            )
-        else:
-            message.reply_text(
-                "You have two options: \n1. Reply to a file or text to nekofy it!\n 2. Send command with text and specify file extension."
-            )
     else:
-        if len(text) >= 1:
-            key = (
-                r.post(
-                    "https://nekobin.com/api/documents",
-                    json={"content": f"{text}\n"},
-                )
-                .json()
-                .get("result")
-                .get("key")
-            )
+        extension, text = args
 
-            message.reply_text(
-                "<b>Nekofied: </b>",
-                parse_mode=ParseMode.HTML,
-                reply_markup=InlineKeyboardMarkup(
+    if len(text) >= 1:
+        key = (
+            r.post(
+                "https://nekobin.com/api/documents",
+                json={"content": f"{text}\n"},
+            )
+            .json()
+            .get("result")
+            .get("key")
+        )
+
+        dispatcher.bot.send_message(
+            message.chat.id,
+            text=f"<b>Message nekofied!</b>\n File extension: .{extension}",
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(
+                [
                     [
-                        [
-                            InlineKeyboardButton(
-                                text="View on nekobin",
-                                url=f"https://nekobin.com/{key}.{extension}",
-                            ),
-                        ]
+                        InlineKeyboardButton(
+                            text="View on nekobin",
+                            url=f"https://nekobin.com/{key}.{extension}",
+                        ),
                     ]
-                ),
-            )
-        else:
-            message.reply_text(
-                "You have two options: \n1. Reply to a file or text to nekofy it!\n 2. Send command with text and specify file extension."
-            )
+                ]
+            ),
+        )
+    else:
+        message.reply_text(
+            "You have two options: \n1. Reply to a file or text to nekofy it!\n 2. Send command with text and specify file extension."
+        )
 
 
 # /exec: Enables the OWNER and SUDO_USERS to execute python code using the bot.
@@ -690,14 +627,14 @@ An "odds and ends" module for small, simple commands which don't really fit anyw
 
  × /id: Get the current group id. If used by replying to a message, gets that user's id.
  × /info: Get information about a user.
- × /source: Get the codebase source link.
- × /gitstats <username>: Get Github stats of a user.
- × /repo <username>: Displays a list of hyperlinked repos of a user on Github.
+ × /source: Get the bot's source link.
+ × /nekofy <py/c/java/txt...> <code>: Uploads input code to neko.bin (max. 4096 chars). Reply to file to upload. 
  × /wiki <query>: Search wikipedia articles.
+ × /dict <query>: Search for words you are unsure about with a dictionary. Supported languages are: en, de, fr, ru.
  × /ud <query> : Search stuffs in urban dictionary.
  × /reverse: Reverse searches image or stickers on google.
- × /gdpr: Deletes your information from the bot's database. Private chats only.
- × /markdownhelp: Quick summary of how markdown works in telegram - can only be called in private chats.
+ × /gdpr: Deletes your information from the bot's database. Private group chats only.
+ × /markdownhelp: Short summary of how markdown works in Telegram (can only be called in private group chats/Bot pm).
 """
 
 __mod_name__ = "Miscs"
@@ -705,7 +642,9 @@ __mod_name__ = "Miscs"
 ID_HANDLER = DisableAbleCommandHandler("id", get_id, pass_args=True)
 INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
 ECHO_HANDLER = CommandHandler("echo", echo, filters=CustomFilters.sudo_filter)
-MD_HELP_HANDLER = CommandHandler("markdownhelp", markdown_help, filters=Filters.private)
+MD_HELP_HANDLER = CommandHandler(
+    "markdownhelp", markdown_help, filters=Filters.private
+)
 STATS_HANDLER = CommandHandler("stats", stats, filters=Filters.user(OWNER_ID))
 GDPR_HANDLER = CommandHandler("gdpr", gdpr, filters=Filters.private)
 WIKI_HANDLER = DisableAbleCommandHandler("wiki", wiki)
@@ -716,17 +655,23 @@ GETLINK_HANDLER = CommandHandler(
 STAFFLIST_HANDLER = CommandHandler(
     "staffids", staff_ids, filters=Filters.user(OWNER_ID)
 )
-SRC_HANDLER = CommandHandler("source", src, filters=Filters.private)
+SRC_HANDLER = CommandHandler("source", src)
 SHELL_HANDLER = CommandHandler(
     "shell", shell, filters=Filters.user(OWNER_ID), run_async=True
 )
 PYEVAL_HANDLER = CommandHandler(
     "exec", pyeval, filters=CustomFilters.sudo_filter, run_async=True
 )
-GITHUB_HANDLER = CommandHandler("gitstats", github, pass_args=True, run_async=True)
-REPO_HANDLER = CommandHandler("repo", repo, pass_args=True, run_async=True)
-DICT_HANDLER = CommandHandler("dict", dictionary, pass_args=True, run_async=True)
-NEKOFY_HANDLER = CommandHandler("nekofy", nekobin, pass_args=True, run_async=True)
+DICT_HANDLER = CommandHandler(
+    "dict", dictionary, pass_args=True, run_async=True
+)
+DICT_BTN_HANDLER = CallbackQueryHandler(
+    dictionary_btn, pattern=r"dictionaryNextPage_"
+)
+NEKOFY_HANDLER = CommandHandler(
+    "nekofy", nekobin, pass_args=True, run_async=True
+)
+
 dispatcher.add_handler(UD_HANDLER)
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(INFO_HANDLER)
@@ -740,7 +685,6 @@ dispatcher.add_handler(STAFFLIST_HANDLER)
 dispatcher.add_handler(SRC_HANDLER)
 dispatcher.add_handler(SHELL_HANDLER)
 dispatcher.add_handler(PYEVAL_HANDLER)
-dispatcher.add_handler(GITHUB_HANDLER)
-dispatcher.add_handler(REPO_HANDLER)
 dispatcher.add_handler(DICT_HANDLER)
+dispatcher.add_handler(DICT_BTN_HANDLER)
 dispatcher.add_handler(NEKOFY_HANDLER)

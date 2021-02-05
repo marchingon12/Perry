@@ -1,16 +1,16 @@
 # Perry (testing)
-> This is where we pre-release Perry. This branch is mainly used for testing Perry for stability and error checks before final commits are merged to the master branch.
+
+> This is where we pre-release Perry. This branch is mainly used for testing Perry for stability and error checks before final commits are merged to the master branch. For now new commits will be merged with the testing branch and NOT the master branch.
 
 [![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
 [![ForTheBadge built-with-love](http://ForTheBadge.com/images/badges/built-with-love.svg)](https://GitHub.com/Naereen/)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/ac5b62f098ca476098e3e4e92b9a149c)](https://www.codacy.com/manual/marchingon12/Perry?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=marchingon12/Perry&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b4c94da4a8e54435b2f23a97a2fe6748)](https://www.codacy.com/gh/marchingon12/Perry/dashboard?utm_source=github.com&utm_medium=referral&utm_content=marchingon12/Perry&utm_campaign=Badge_Grade)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com)
 [![Actively Maintained](https://img.shields.io/badge/Maintenance%20Level-Actively%20Maintained-green.svg)](https://gist.github.com/cheerfulstoic/d107229326a01ff0f333a1d3476e068d)
 
 ![logo](https://telegra.ph/file/39c9eb2839d62825da531.png)
-
 
 A modular Telegram Python bot running on python3 with an sqlalchemy database.
 
@@ -49,7 +49,6 @@ Once you've setup your database and your configuration (see below) is complete, 
 
 `python3 -m perry`
 
-
 ## Setting up the bot (Read this before trying to use!)
 
 Please make sure to use python3.6, as I cannot guarantee everything will work as expected on older python versions!
@@ -58,6 +57,7 @@ This is because markdown parsing is done by iterating through a dict, which are 
 You may be using a server where sudo and superuser rights are not permitted by the admins and can only access the server using ssh. If this is the case, you may want to use [tmux](https://github.com/tmux/tmux/wiki), so that when you disconnect from your ssh session the bot will be kept alive.
 
 Quick example:
+
 - Start a new session:
 
   `tmux new-session -s perrybot`
@@ -78,13 +78,13 @@ There are two possible ways of configuring your bot: a config.py file, or ENV va
 
 The prefered version is to use a `config.py` file, as it makes it easier to see all your settings grouped together.
 This file should be placed in your `perry` folder, alongside the `__main__.py` file .
-This is where your bot token will be loaded from, as well as your database URI (if you're using a database), and most of
-your other settings.
+This is where your bot token will be loaded from, as well as your database URI (if you're using a database), and most of your other settings.
 
 It is recommended to import sample_config and extend the Config class, as this will ensure your config contains all
 defaults set in the sample_config, hence making it easier to upgrade.
 
 An example `config.py` file could be:
+
 ```python
 from perry.sample_config import Config
 
@@ -102,6 +102,48 @@ class Development(Config):
     TELETHON_HASH = "None" # api_hash from my.telegram.org
     TELETHON_ID = "None" # api_id from my.telegram.org
 ```
+
+What you can configure in your config.py file:
+
+- TOKEN: Your bot token, as a string.
+
+- OWNER_ID: An integer of consisting of your owner ID
+
+- OWNER_USERNAME: Your username
+
+- DATABASE_URL: Your database URL
+
+- MESSAGE_DUMP: optional: a chat where your replied saved messages are stored, to stop people deleting their old
+
+- LOAD: Space separated list of modules you would like to load
+
+- NO_LOAD: Space separated list of modules you would like NOT to load
+
+- WEBHOOK: Setting this to ANYTHING will enable webhooks when in env mode messages
+
+- URL: The URL your webhook should connect to (only needed for webhook mode)
+
+- SUDO_USERS: A space separated list of user_ids which should be considered sudo users
+
+- SUPPORT_USERS: A space separated list of user_ids which should be considered support users (can gban/ungban, nothing else)
+
+- WHITELIST_USERS: A space separated list of user_ids which should be considered whitelisted - they can't be banned.
+
+- DONATION_LINK: Optional: link where you would like to receive donations.
+
+- CERT_PATH: Path to your webhook certificate
+
+- PORT: Port to use for your webhooks
+
+- DEL_CMDS: Whether to delete commands from users which don't have rights to use that command
+
+- STRICT_GBAN: Enforce gbans across new groups as well as old groups. When a gbanned user talks, he will be banned.
+
+- WORKERS: Number of threads to use. 8 is the recommended (and default) amount, but your experience may vary. Note that going crazy with more threads wont necessarily speed up your bot, given the large amount of sql data accesses, and the way python asynchronous calls work.
+
+- BAN_STICKER: Which sticker to use when banning people.
+
+- ALLOW_EXCL: Whether to allow using exclamation marks ! for commands as well as /.
 
 ### Python dependencies
 
@@ -128,8 +170,8 @@ For those who do not have access to sudo and superuser rights of the server you 
 
 4. Copy the URL and paste it where`SQLALCHEMY_DATABASE_URI =` lies in your `config.py` file.
 
-
 #### Postgres Setup
+
 In the case of Postgres, this is how you would set up a the database on a debian/ubuntu system. Other distributions may vary.
 
 - Install postgresql:
@@ -173,6 +215,7 @@ Replace sqldbtype with whichever db youre using (eg postgres, mysql, sqllite, et
 repeat for your username, password, hostname (localhost?), port (5432?), and db name.
 
 ## Modules
+
 ### Setting load order.
 
 The module load order can be changed via the `LOAD` and `NO_LOAD` configuration settings.

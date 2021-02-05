@@ -61,7 +61,9 @@ buttons = [
     ]
 ]
 
-buttons += [[InlineKeyboardButton(text="Help & Commands ❔", callback_data="help_back")]]
+buttons += [
+    [InlineKeyboardButton(text="Help & Commands ❔", callback_data="help_back")]
+]
 
 
 HELP_STRINGS = f"""
@@ -98,7 +100,9 @@ for module_name in ALL_MODULES:
     if not imported_module.__mod_name__.lower() in IMPORTED:
         IMPORTED[imported_module.__mod_name__.lower()] = imported_module
     else:
-        raise Exception("Can't have two modules with the same name! Please change one")
+        raise Exception(
+            "Can't have two modules with the same name! Please change one"
+        )
 
     if hasattr(imported_module, "__help__") and imported_module.__help__:
         HELPABLE[imported_module.__mod_name__.lower()] = imported_module
@@ -166,9 +170,13 @@ def start(update, context):
                 chat = dispatcher.bot.getChat(match.group(1))
 
                 if is_user_admin(chat, update.effective_user.id):
-                    send_settings(match.group(1), update.effective_user.id, False)
+                    send_settings(
+                        match.group(1), update.effective_user.id, False
+                    )
                 else:
-                    send_settings(match.group(1), update.effective_user.id, True)
+                    send_settings(
+                        match.group(1), update.effective_user.id, True
+                    )
 
             elif args[0][1:].isdigit() and "rules" in IMPORTED:
                 IMPORTED["rules"].send_rules(update, args[0], from_pm=True)
@@ -187,6 +195,8 @@ def start(update, context):
 
 def error_handler(update, context):
     """Log the error and send a telegram message to notify the developer."""
+    message = update.effective_message
+    text = message.text.split(None, 1)
     LOGGER.error(msg="Error found, check dump below:", exc_info=context.error)
 
     # traceback.format_exception returns the usual python message about an exception, but as a
@@ -196,22 +206,35 @@ def error_handler(update, context):
     )
     trace = "".join(tb_list)
 
+    # if only a single command with no args then 
+    if len(text) == 1:
+        cmd = f"{text[0]}"
+        args = "None"
+    else:
+        cmd, args = text
+
     # lets try to get as much information from the telegram update as possible
-    payload = ""
+    payload = f"\n<b>- Command</b>:<code> {cmd}</code>"
+    payload += f"\n<b>- Arguments</b>:<code> {args}</code>"
+    payload += f"\n<b>- Error message</b>:\n<code>{context.error}</code>"
     # normally, we always have a user. If not, its either a channel or a poll update.
     if update.effective_user:
         payload += f" \n<b>- User</b>: {mention_html(update.effective_user.id, update.effective_user.first_name)}"
     # there are more situations when you don't get a chat
     if update.effective_chat:
         if update.effective_chat.title == None:
-            payload += f" \n<b>- Chat</b>: <i>Bot PM</i>"
+            payload += f" \n<b>- Chat</b>:<b> Bot PM</b>"
         else:
-            payload += f" \n<b>- Chat</b>: <i>{update.effective_chat.title}</i>"
+            invite_link = update.effective_chat.link
+            if invite_link is None:
+                payload += f" \n<b>- Chat</b>:<b> {update.effective_chat.title}</b>, chat is <b>private</b>"
+            else:
+                payload += f' \n<b>- Chat</b>:<a href="{invite_link}"><b> {update.effective_chat.title}</b></a>'
     # but only one where you have an empty payload by now: A poll (buuuh)
     if update.poll:
         payload += f" \n<b>- Poll id</b>: {update.poll.id}."
     # lets put this in a "well" formatted text
-    text = f"<b>Error found while handling an update!</b>\n<b>- Error message</b>:\n<code>{context.error}</code> {payload}"
+    text = f"<b>Error found while handling an update!</b> {payload}"
 
     # now paste the error (trace) in nekobin and make buttons
     # with url of log, as log in telegram message is hardly readable..
@@ -241,7 +264,9 @@ def error_handler(update, context):
             ]
         ]
     )
-    context.bot.send_message(OWNER_ID, text, reply_markup=markup, parse_mode="html")
+    context.bot.send_message(
+        OWNER_ID, text, reply_markup=markup, parse_mode="html"
+    )
 
 
 def help_button(update, context):
@@ -251,7 +276,7 @@ def help_button(update, context):
     next_match = re.match(r"help_next\((.+?)\)", query.data)
     back_match = re.match(r"help_back", query.data)
 
-    print(query.message.chat.id)
+    # print(query.message.chat.id)
 
     try:
         if mod_match:
@@ -266,7 +291,13 @@ def help_button(update, context):
                 text=text,
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton(text="⬅️ Back", callback_data="help_back")]]
+                    [
+                        [
+                            InlineKeyboardButton(
+                                text="⬅️ Back", callback_data="help_back"
+                            )
+                        ]
+                    ]
                 ),
             )
 
@@ -326,7 +357,9 @@ def get_help(update, context):
                     [
                         InlineKeyboardButton(
                             text="Help",
-                            url="t.me/{}?start=help".format(context.bot.username),
+                            url="t.me/{}?start=help".format(
+                                context.bot.username
+                            ),
                         )
                     ]
                 ]
@@ -346,7 +379,13 @@ def get_help(update, context):
             chat.id,
             text,
             InlineKeyboardMarkup(
-                [[InlineKeyboardButton(text="Back", callback_data="help_back")]]
+                [
+                    [
+                        InlineKeyboardButton(
+                            text="Back", callback_data="help_back"
+                        )
+                    ]
+                ]
             ),
         )
 
@@ -358,7 +397,9 @@ def send_settings(chat_id, user_id, user=False):
     if user:
         if USER_SETTINGS:
             settings = "\n\n".join(
-                "*{}*:\n{}".format(mod.__mod_name__, mod.__user_settings__(user_id))
+                "*{}*:\n{}".format(
+                    mod.__mod_name__, mod.__user_settings__(user_id)
+                )
                 for mod in USER_SETTINGS.values()
             )
             dispatcher.bot.send_message(
@@ -409,7 +450,11 @@ def settings_button(update, context):
             chat = context.bot.get_chat(chat_id)
             text = "*{}* has the following settings for the *{}* module:\n\n".format(
                 escape_markdown(chat.title), CHAT_SETTINGS[module].__mod_name__
-            ) + CHAT_SETTINGS[module].__chat_settings__(chat_id, user.id)
+            ) + CHAT_SETTINGS[
+                module
+            ].__chat_settings__(
+                chat_id, user.id
+            )
             query.message.reply_text(
                 text=text,
                 parse_mode=ParseMode.MARKDOWN,
@@ -475,7 +520,9 @@ def settings_button(update, context):
             "Message can't be deleted",
         }:
             query.message.edit_text(excp.message)
-            LOGGER.exception("Exception in settings buttons. %s", str(query.data))
+            LOGGER.exception(
+                "Exception in settings buttons. %s", str(query.data)
+            )
 
 
 @typing_action
@@ -592,8 +639,12 @@ def main():
         settings_button, pattern=r"stngs_", run_async=True
     )
 
-    migrate_handler = MessageHandler(Filters.status_update.migrate, migrate_chats)
-    is_chat_allowed_handler = MessageHandler(Filters.chat_type.groups, is_chat_allowed)
+    migrate_handler = MessageHandler(
+        Filters.status_update.migrate, migrate_chats
+    )
+    is_chat_allowed_handler = MessageHandler(
+        Filters.chat_type.groups, is_chat_allowed
+    )
 
     # dispatcher.add_handler(test_handler)
     dispatcher.add_handler(start_handler)
@@ -612,7 +663,9 @@ def main():
         updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN)
 
         if CERT_PATH:
-            updater.bot.set_webhook(url=URL + TOKEN, certificate=open(CERT_PATH, "rb"))
+            updater.bot.set_webhook(
+                url=URL + TOKEN, certificate=open(CERT_PATH, "rb")
+            )
         else:
             updater.bot.set_webhook(url=URL + TOKEN)
             client.run_until_disconnected()

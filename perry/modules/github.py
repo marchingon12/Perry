@@ -157,7 +157,11 @@ def repo(update, context):
         try:
             text = f"*Repo name:* {rep_data['full_name']}"
             text += f"\n*Language*: {rep_data['language']}"
-            text += f"\n*License*: `{rep_data['license']['name']}`"
+            if f"{rep_data['license']}" == "null":
+                licensePlate = rep_data["license"]["name"]
+            else:
+                licensePlate = rep_data["license"]
+            text += f"\n*License*: `{licensePlate}`"
 
             whitelist = [
                 "description",
@@ -234,13 +238,17 @@ def repo(update, context):
                         # [
                         #     InlineKeyboardButton(
                         #         text="Clone",
-                        #         callback_data=f"cloneMessage_{user.id}",
+                        #         callback_data=f"cloneMessage_{user.id, user, repo}",
                         #     ),
-                        # ]
+                        #     InlineKeyboardButton(
+                        #         text="Branch",
+                        #         callback_data=f"branchMessage_{user.id, user, repo}",
+                        #     ),
+                        # ],
                     ]
                 ),
             )
-        except BadRequest:
+        except KeyError:
             return message.reply_text(
                 "*User/Organization not found!* \nMake sure to enter a valid username.",
                 parse_mode=ParseMode.MARKDOWN,
@@ -296,6 +304,21 @@ def gitclone(update, context):
         )
 
 
+def gitclone_btn(update, context):
+    message = update.effective_message
+    args = message.text.split(None, 2)[1:]
+    user = update.effective_user
+    query = update.callback_query
+    user_data = context.user_data
+
+    user_id = query.data.split("_")[1]
+    if int(user_id) != user.id:
+        return query.answer(
+            "You're not the person who initated the command!", show_alert=True
+        )
+
+
+@typing_action
 def gitbranch(update, context):
     message = update.effective_message
     args = message.text.split(None, 2)[1:]
@@ -332,6 +355,21 @@ def gitbranch(update, context):
         )
 
 
+def gitbranch_btn(update, context):
+    message = update.effective_message
+    args = message.text.split(None, 2)[1:]
+
+    user = update.effective_user
+    data = update.callback_query.data
+    user_id = query.data.split("_")[1]
+    if int(user_id) != user.id:
+        return query.answer(
+            "You're not the person who initated the command!", show_alert=True
+        )
+
+    message.edit_text(gitbranch(message, args))
+
+
 __help__ = """
 Some useful git functions to make Github browsing easier and faster.
 
@@ -351,13 +389,19 @@ GITCLONE_HANDLER = CommandHandler(
     "gitclone", gitclone, pass_args=True, run_async=True
 )
 REPO_HANDLER = CommandHandler("repo", repo, pass_args=True, run_async=True)
-# GITCLONE_BTN_HANDLER = CommandHandler(gitclone, pattern=r"cloneMessage_")
+GITCLONE_BTN_HANDLER = CallbackQueryHandler(
+    gitclone_btn, pattern=r"cloneMessage_"
+)
 GITBRANCH_HANDLER = CommandHandler(
     "gitbranch", gitbranch, pass_args=True, run_async=True
+)
+GITBRANCH_BTN_HANDLER = CallbackQueryHandler(
+    gitbranch_btn, pattern=r"branchMessage_"
 )
 
 dispatcher.add_handler(GITHUB_HANDLER)
 dispatcher.add_handler(REPO_HANDLER)
 dispatcher.add_handler(GITCLONE_HANDLER)
-# dispatcher.add_handler(GITCLONE_BTN_HANDLER)
+dispatcher.add_handler(GITCLONE_BTN_HANDLER)
 dispatcher.add_handler(GITBRANCH_HANDLER)
+dispatcher.add_handler(GITBRANCH_BTN_HANDLER)

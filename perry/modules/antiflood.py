@@ -126,7 +126,7 @@ def set_flood(update, context) -> str:
 
     if len(args) >= 1:
         val = args[0].lower()
-        if val == "off" or val == "no" or val == "0":
+        if val == "off" or val == "on" or val == "0":
             sql.set_flood(chat_id, 0)
             if conn:
                 text = message.reply_text(
@@ -173,9 +173,13 @@ def set_flood(update, context) -> str:
                     )
                 else:
                     text = message.reply_text(
-                        "Successfully updated anti-flood limit to {}!".format(amount)
+                        "Successfully updated anti-flood limit to {}!".format(
+                            amount
+                        )
                     )
-                send_message(update.effective_message, text, parse_mode="markdown")
+                send_message(
+                    update.effective_message, text, parse_mode="markdown"
+                )
                 return (
                     "<b>{}:</b>"
                     "\n#SETFLOOD"
@@ -188,7 +192,9 @@ def set_flood(update, context) -> str:
                 )
 
         else:
-            message.reply_text("Invalid argument please use a number, 'off' or 'no'")
+            message.reply_text(
+                "Invalid argument please use a number, 'off' or 'on'"
+            )
     else:
         message.reply_text(
             (
@@ -284,7 +290,9 @@ def set_flood_mode(update, context):
                 teks = """It looks like you tried to set time value for antiflood but you didn't specified time; Try, `/setfloodmode tban <timevalue>`.
 
 Examples of time value: 4m = 4 minutes, 3h = 3 hours, 6d = 6 days, 5w = 5 weeks."""
-                send_message(update.effective_message, teks, parse_mode="markdown")
+                send_message(
+                    update.effective_message, teks, parse_mode="markdown"
+                )
                 return
             settypeflood = "tban for {}".format(args[1])
             sql.set_flood_strength(chat_id, 4, str(args[1]))
@@ -293,7 +301,9 @@ Examples of time value: 4m = 4 minutes, 3h = 3 hours, 6d = 6 days, 5w = 5 weeks.
                 teks = """It looks like you tried to set time value for antiflood but you didn't specified time; Try, `/setfloodmode tmute <timevalue>`.
 
 Examples of time value: 4m = 4 minutes, 3h = 3 hours, 6d = 6 days, 5w = 5 weeks."""
-                send_message(update.effective_message, teks, parse_mode="markdown")
+                send_message(
+                    update.effective_message, teks, parse_mode="markdown"
+                )
                 return
             settypeflood = "tmute for {}".format(args[1])
             sql.set_flood_strength(chat_id, 5, str(args[1]))
@@ -349,7 +359,9 @@ Examples of time value: 4m = 4 minutes, 3h = 3 hours, 6d = 6 days, 5w = 5 weeks.
                     settypeflood
                 )
             )
-        send_message(update.effective_message, text, parse_mode=ParseMode.MARKDOWN)
+        send_message(
+            update.effective_message, text, parse_mode=ParseMode.MARKDOWN
+        )
     return ""
 
 
@@ -375,7 +387,7 @@ will result in restricting that user.
 
 *Admin only*:
 
- × /setflood <int/'no'/'off'>: enables or disables flood control
+ × /setflood <int/'on'/'off'>: enables or disables flood control
  × /setfloodmode <ban/kick/mute/tban/tmute> <value>: Action to perform when user have exceeded flood limit. ban/kick/mute/tmute/tban
 
  Note:
@@ -391,7 +403,8 @@ will result in restricting that user.
 __mod_name__ = "Antiflood"
 
 FLOOD_BAN_HANDLER = MessageHandler(
-    Filters.all & ~Filters.status_update & Filters.chat_type.groups, check_flood
+    Filters.all & ~Filters.status_update & Filters.chat_type.groups,
+    check_flood,
 )
 SET_FLOOD_HANDLER = CommandHandler(
     "setflood", set_flood, pass_args=True
@@ -399,7 +412,9 @@ SET_FLOOD_HANDLER = CommandHandler(
 SET_FLOOD_MODE_HANDLER = CommandHandler(
     "setfloodmode", set_flood_mode, pass_args=True
 )  # , filters=Filters.chat_type.groups)
-FLOOD_HANDLER = CommandHandler("flood", flood)  # , filters=Filters.chat_type.groups)
+FLOOD_HANDLER = CommandHandler(
+    "flood", flood
+)  # , filters=Filters.chat_type.groups)
 
 dispatcher.add_handler(FLOOD_BAN_HANDLER, FLOOD_GROUP)
 dispatcher.add_handler(SET_FLOOD_HANDLER)

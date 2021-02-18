@@ -362,7 +362,7 @@ def dictionary(update, context):
 
     resp = get(f"https://api.dictionaryapi.dev/api/v2/entries/{lang}/{text}")
     if resp.status_code != 200:
-        return msg.reply_text("Sorry! could'nt find any results...")
+        return msg.reply_text("Sorry! Couldn't find any results...")
     results = resp.json()[0]["meanings"]
 
     # make HasNextWrapper obj from search

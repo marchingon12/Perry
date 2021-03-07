@@ -3,7 +3,6 @@ import re
 from typing import Optional, List
 from requests import get
 from datetime import datetime
-from requests import get
 from html import escape
 
 from telegram import (
@@ -157,7 +156,7 @@ def repo(update, context):
         try:
             text = f"*Repo name:* {rep_data['full_name']}"
             text += f"\n*Language*: {rep_data['language']}"
-            if f"{rep_data['license']}" == "null":
+            if f"{rep_data['license']}" != "null":
                 licensePlate = rep_data["license"]["name"]
             else:
                 licensePlate = rep_data["license"]

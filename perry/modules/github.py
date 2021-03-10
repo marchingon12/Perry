@@ -76,14 +76,22 @@ def gitstats(update, context):
                 if x in whitelist:
                     x = rename.get(x, x.title())
 
-                    if x in ["Account created at", "Last updated"]:
+                    times = ["Account created at", "Last updated"]
+
+                    if x in times:
                         y = datetime.strptime(y, "%Y-%m-%dT%H:%M:%SZ")
 
-                    if y not in empty:
+                    if y not in empty and not "Bio" or "Blog":
                         if x == "Blog":
                             x = "Website"
                             y = f"[Here!]({y})"
                             text += "\n*{}:* {}".format(x, y)
+                        elif x in [
+                            "Bio",
+                            "Account created at",
+                            "Last updated",
+                        ]:
+                            text += "\n*{}:* \n`{}`".format(x, y)
                         else:
                             text += "\n*{}:* `{}`".format(x, y)
 
@@ -93,7 +101,6 @@ def gitstats(update, context):
                 f"{usr['html_url']}",
                 caption=text,
                 parse_mode=ParseMode.MARKDOWN,
-                # disable_web_page_preview=True,
                 reply_markup=InlineKeyboardMarkup(
                     [
                         [
@@ -156,10 +163,10 @@ def repo(update, context):
         try:
             text = f"*Repo name:* {rep_data['full_name']}"
             text += f"\n*Language*: {rep_data['language']}"
-            if f"{rep_data['license']}" != "null":
-                licensePlate = rep_data["license"]["name"]
+            if f"{rep_data['license']}" is None:
+                licensePlate = "None"
             else:
-                licensePlate = rep_data["license"]
+                licensePlate = rep_data["license"]["name"]
             text += f"\n*License*: `{licensePlate}`"
 
             whitelist = [

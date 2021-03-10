@@ -166,7 +166,10 @@ def repo(update, context):
             if f"{rep_data['license']}" is None:
                 licensePlate = "None"
             else:
-                licensePlate = rep_data["license"]["name"]
+                try:
+                    licensePlate = rep_data["license"]["name"]
+                except TypeError:
+                    licensePlate = rep_data["license"]
             text += f"\n*License*: `{licensePlate}`"
 
             whitelist = [
